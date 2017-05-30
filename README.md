@@ -1,10 +1,10 @@
 # BrotliSharpLib
 
-BrotliSharpLib is a full C# port of the brotli compression format and implementation [by Google](https://github.com/google/brotli). It is intended to be a mostly 1:1 conversion of the original C code. All code is correct as of v0.6.0 of the reference implementation.
+BrotliSharpLib is a full C# port of the brotli library/compression code [by Google](https://github.com/google/brotli). It is intended to be a mostly 1:1 conversion of the original C code. All code is correct as of v0.6.0 of the reference implementation.
 
-The code targets .NET Framework 2.0 and thus uses a minimal set of APIs to ensure compatibility with a wide range of frameworks including .NET Standard and .NET Core.
+The projects targets .NET Framework 2.0 and thus uses a minimal set of APIs to ensure compatibility with a wide range of frameworks including .NET Standard and .NET Core.
 
-Currently the code only supports decompression and will implement compression in the future. The underlying APIs do support streams however a proper Stream class won't be created until compression has been completed.
+Currently the code only supports decompression and will implement compression in the future. The underlying APIs do support streams however, a proper Stream class won't be created until compression has been completed.
 
 BrotliSharpLib is licensed under [MIT](https://github.com/master131/BrotliSharpLib/blob/master/LICENSE).
 
