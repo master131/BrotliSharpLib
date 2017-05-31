@@ -18,108 +18,12 @@ namespace BrotliSharpLib {
             return (T) s;
         }
 
-        private static unsafe void BrotliDecoderStateInit(ref BrotliDecoderState s) {
-            BrotliDecoderStateInitWithCustomAllocators(ref s, null, null, null);
-        }
-
         private static unsafe void* DefaultAllocFunc(void* opaque, size_t size) {
             return Marshal.AllocHGlobal((int) size).ToPointer();
         }
 
         private static unsafe void DefaultFreeFunc(void* opaque, void* address) {
             Marshal.FreeHGlobal((IntPtr) address);
-        }
-
-        private static unsafe void BrotliInitBitReader(BrotliBitReader* br) {
-            br->val_ = 0;
-            br->bit_pos_ = (uint) (IntPtr.Size << 3);
-        }
-
-        private static unsafe void BrotliDecoderStateInitWithCustomAllocators(
-            ref BrotliDecoderState s, brotli_alloc_func alloc_func, brotli_free_func free_func,
-            void* opaque) {
-            if (alloc_func == null) {
-                s.alloc_func = DefaultAllocFunc;
-                s.free_func = DefaultFreeFunc;
-                s.memory_manager_opaque = null;
-            }
-            else {
-                s.alloc_func = alloc_func;
-                s.free_func = free_func;
-                s.memory_manager_opaque = opaque;
-            }
-
-            fixed (BrotliBitReader* br = &s.br)
-                BrotliInitBitReader(br);
-
-            s.state = BrotliRunningState.BROTLI_STATE_UNINITED;
-            s.substate_metablock_header = BrotliRunningMetablockHeaderState.BROTLI_STATE_METABLOCK_HEADER_NONE;
-            s.substate_tree_group = BrotliRunningTreeGroupState.BROTLI_STATE_TREE_GROUP_NONE;
-            s.substate_context_map = BrotliRunningContextMapState.BROTLI_STATE_CONTEXT_MAP_NONE;
-            s.substate_uncompressed = BrotliRunningUncompressedState.BROTLI_STATE_UNCOMPRESSED_NONE;
-            s.substate_huffman = BrotliRunningHuffmanState.BROTLI_STATE_HUFFMAN_NONE;
-            s.substate_decode_uint8 = BrotliRunningDecodeUint8State.BROTLI_STATE_DECODE_UINT8_NONE;
-            s.substate_read_block_length = BrotliRunningReadBlockLengthState.BROTLI_STATE_READ_BLOCK_LENGTH_NONE;
-
-            s.buffer_length = 0;
-            s.loop_counter = 0;
-            s.pos = 0;
-            s.rb_roundtrips = 0;
-            s.partial_pos_out = 0;
-
-            s.block_type_trees = null;
-            s.block_len_trees = null;
-            s.ringbuffer = null;
-            s.ringbuffer_size = 0;
-            s.new_ringbuffer_size = 0;
-            s.ringbuffer_mask = 0;
-
-            s.context_map = null;
-            s.context_modes = null;
-            s.dist_context_map = null;
-            s.context_map_slice = null;
-            s.dist_context_map_slice = null;
-
-            s.sub_loop_counter = 0;
-
-            s.literal_hgroup.codes = null;
-            s.literal_hgroup.htrees = null;
-            s.insert_copy_hgroup.codes = null;
-            s.insert_copy_hgroup.htrees = null;
-            s.distance_hgroup.codes = null;
-            s.distance_hgroup.htrees = null;
-
-            s.custom_dict = null;
-            s.custom_dict_size = 0;
-
-            s.is_last_metablock = false;
-            s.should_wrap_ringbuffer = false;
-            s.window_bits = 0;
-            s.max_distance = 0;
-            fixed (int* rb = s.dist_rb) {
-                rb[0] = 16;
-                rb[1] = 15;
-                rb[2] = 11;
-                rb[3] = 4;
-            }
-            s.dist_rb_idx = 0;
-            s.block_type_trees = null;
-            s.block_len_trees = null;
-
-            /* Make small negative indexes addressable. */
-            fixed (ushort* sla = s.symbols_lists_array)
-                s.symbol_lists = &sla[BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1];
-
-            s.mtf_upper_bound = 63;
-        }
-
-        private static unsafe void BrotliDecoderStateCleanup(ref BrotliDecoderState s) {
-            BrotliDecoderStateCleanupAfterMetablock(ref s);
-
-            s.free_func(s.memory_manager_opaque, s.ringbuffer);
-            s.ringbuffer = null;
-            s.free_func(s.memory_manager_opaque, s.block_type_trees);
-            s.block_type_trees = null;
         }
 
         private static BrotliDecoderState BrotliCreateDecoderState() {
@@ -146,7 +50,6 @@ namespace BrotliSharpLib {
         }
 
         /* Saves error code and converts it to BrotliDecoderResult */
-
         private static BrotliDecoderResult SaveErrorCode(
             ref BrotliDecoderState s, BrotliDecoderErrorCode e) {
             s.error_code = (int) e;
@@ -166,7 +69,7 @@ namespace BrotliSharpLib {
             var pos = wrap && s.pos > s.ringbuffer_size
                 ? (size_t) s.ringbuffer_size
                 : (size_t) (s.pos);
-            var partial_pos_rb = (s.rb_roundtrips*(size_t) s.ringbuffer_size) + pos;
+            var partial_pos_rb = (s.rb_roundtrips * (size_t) s.ringbuffer_size) + pos;
             return partial_pos_rb - s.partial_pos_out;
         }
 
@@ -213,96 +116,9 @@ namespace BrotliSharpLib {
             return BrotliDecoderErrorCode.BROTLI_DECODER_SUCCESS;
         }
 
-        private static unsafe uint BrotliGetAvailableBits(BrotliBitReader* br) {
-            return (uint) ((Is64Bit ? 64 : 32) - br->bit_pos_);
-        }
-
-        private static unsafe void BrotliBitReaderUnload(BrotliBitReader* br) {
-            var unused_bytes = BrotliGetAvailableBits(br) >> 3;
-            var unused_bits = unused_bytes << 3;
-            br->avail_in += unused_bytes;
-            br->next_in -= unused_bytes;
-            if (unused_bits == IntPtr.Size << 3) {
-                br->val_ = 0;
-            }
-            else {
-                br->val_ <<= (int) unused_bits;
-            }
-            br->bit_pos_ += unused_bits;
-        }
-
-        private static unsafe bool BrotliWarmupBitReader(BrotliBitReader* br) {
-            size_t aligned_read_mask = (IntPtr.Size >> 1) - 1;
-            /* Fixing alignment after unaligned BrotliFillWindow would result accumulator
-               overflow. If unalignment is caused by BrotliSafeReadBits, then there is
-               enough space in accumulator to fix alignment. */
-            if (!BROTLI_ALIGNED_READ) {
-                aligned_read_mask = 0;
-            }
-            if (BrotliGetAvailableBits(br) == 0) {
-                if (!BrotliPullByte(br)) {
-                    return false;
-                }
-            }
-
-            while ((((size_t) br->next_in) & aligned_read_mask) != 0) {
-                if (!BrotliPullByte(br)) {
-                    /* If we consumed all the input, we don't care about the alignment. */
-                    return true;
-                }
-            }
-            return true;
-        }
-
-        /* Pulls one byte of input to accumulator. */
-
-        private static unsafe bool BrotliPullByte(BrotliBitReader* br) {
-            if (br->avail_in == 0) {
-                return false;
-            }
-            br->val_ >>= 8;
-            if (Is64Bit) {
-                br->val_ |= ((ulong) *br->next_in) << 56;
-            }
-            else {
-                br->val_ |= ((uint) *br->next_in) << 24;
-            }
-            br->bit_pos_ -= 8;
-            --br->avail_in;
-            ++br->next_in;
-            return true;
-        }
-
-        /* Returns currently available bits.
-        The number of valid bits could be calculated by BrotliGetAvailableBits. */
-
-        private static unsafe reg_t BrotliGetBitsUnmasked(BrotliBitReader* br) {
-            return br->val_ >> (int) br->bit_pos_;
-        }
-
-        private static uint BitMask(uint n) {
-            return kBitMask[n];
-        }
-
-        /* Advances the bit pos by n_bits. */
-
-        private static unsafe void BrotliDropBits(
-            BrotliBitReader* br, uint n_bits) {
-            br->bit_pos_ += n_bits;
-        }
-
-        /* Reads the specified number of bits from |br| and advances the bit pos.
-           Precondition: accumulator MUST contain at least n_bits. */
-
-        private static unsafe void BrotliTakeBits(
-            BrotliBitReader* br, uint n_bits, uint* val) {
-            *val = BrotliGetBitsUnmasked(br) & BitMask(n_bits);
-            BrotliDropBits(br, n_bits);
-        }
 
         /* Decodes a number in the range [9..24], by reading 1 - 7 bits.
            Precondition: bit-reader accumulator has at least 7 bits. */
-
         private static unsafe uint DecodeWindowBits(BrotliBitReader* br) {
             uint n;
             BrotliTakeBits(br, 1, &n);
@@ -320,59 +136,7 @@ namespace BrotliSharpLib {
             return 17;
         }
 
-        private static unsafe void BrotliDecoderStateMetablockBegin(ref BrotliDecoderState s) {
-            s.meta_block_remaining_len = 0;
-            fixed (uint* bl = s.block_length) {
-                bl[0] = 1U << 28;
-                bl[1] = 1U << 28;
-                bl[2] = 1U << 28;
-            }
-            fixed (uint* nbt = s.num_block_types) {
-                nbt[0] = 1;
-                nbt[1] = 1;
-                nbt[2] = 1;
-            }
-            fixed (uint* btr = s.block_type_rb) {
-                btr[0] = 1;
-                btr[1] = 0;
-                btr[2] = 1;
-                btr[3] = 0;
-                btr[4] = 1;
-                btr[5] = 0;
-            }
-            s.context_map = null;
-            s.context_modes = null;
-            s.dist_context_map = null;
-            s.context_map_slice = null;
-            s.literal_htree = null;
-            s.dist_context_map_slice = null;
-            s.dist_htree_index = 0;
-            s.context_lookup1 = null;
-            s.context_lookup2 = null;
-            s.literal_hgroup.codes = null;
-            s.literal_hgroup.htrees = null;
-            s.insert_copy_hgroup.codes = null;
-            s.insert_copy_hgroup.htrees = null;
-            s.distance_hgroup.codes = null;
-            s.distance_hgroup.htrees = null;
-        }
-
-        /* Tries to read the specified amount of bits. Returns 0, if there is not
-           enough input. n_bits MUST be positive. */
-
-        private static unsafe bool BrotliSafeReadBits(
-            BrotliBitReader* br, uint n_bits, uint* val) {
-            while (BrotliGetAvailableBits(br) < n_bits) {
-                if (!BrotliPullByte(br)) {
-                    return false;
-                }
-            }
-            BrotliTakeBits(br, n_bits, val);
-            return true;
-        }
-
         /* Decodes a metablock length and flags by reading 2 - 31 bits. */
-
         private static unsafe BrotliDecoderErrorCode DecodeMetaBlockLength(
             ref BrotliDecoderState s, BrotliBitReader* br) {
             uint bits;
@@ -435,7 +199,7 @@ namespace BrotliSharpLib {
                             if (i + 1 == s.size_nibbles && s.size_nibbles > 4 && bits == 0) {
                                 return BrotliDecoderErrorCode.BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_NIBBLE;
                             }
-                            s.meta_block_remaining_len |= (int) (bits << (i*4));
+                            s.meta_block_remaining_len |= (int) (bits << (i * 4));
                         }
                         s.substate_metablock_header =
                             BrotliRunningMetablockHeaderState.BROTLI_STATE_METABLOCK_HEADER_UNCOMPRESSED;
@@ -488,7 +252,7 @@ namespace BrotliSharpLib {
                             if (i + 1 == s.size_nibbles && s.size_nibbles > 1 && bits == 0) {
                                 return BrotliDecoderErrorCode.BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_META_NIBBLE;
                             }
-                            s.meta_block_remaining_len |= (int) (bits << (i*8));
+                            s.meta_block_remaining_len |= (int) (bits << (i * 8));
                         }
                         ++s.meta_block_remaining_len;
                         s.substate_metablock_header =
@@ -501,26 +265,13 @@ namespace BrotliSharpLib {
             }
         }
 
-        /* Advances the bit reader position to the next byte boundary and verifies
-   that any skipped bits are set to zero. */
-
-        private static unsafe bool BrotliJumpToByteBoundary(BrotliBitReader* br) {
-            var pad_bits_count = BrotliGetAvailableBits(br) & 0x7;
-            uint pad_bits = 0;
-            if (pad_bits_count != 0) {
-                BrotliTakeBits(br, pad_bits_count, &pad_bits);
-            }
-            return pad_bits == 0;
-        }
-
         /* Calculates the smallest feasible ring buffer.
 
-   If we know the data size is small, do not allocate more ring buffer
-   size than needed to reduce memory usage.
+           If we know the data size is small, do not allocate more ring buffer
+           size than needed to reduce memory usage.
 
-   When this method is called, metablock size and flags MUST be decoded.
-*/
-
+           When this method is called, metablock size and flags MUST be decoded.
+        */
         private static unsafe void BrotliCalculateRingBufferSize(
             ref BrotliDecoderState s) {
             var window_size = 1 << (int) s.window_bits;
@@ -557,41 +308,16 @@ namespace BrotliSharpLib {
             s.new_ringbuffer_size = new_ringbuffer_size;
         }
 
-        /* Returns amount of unread bytes the bit reader still has buffered from the
-   BrotliInput, including whole bytes in br->val_. */
-
-        private static unsafe size_t BrotliGetRemainingBytes(BrotliBitReader* br) {
-            return br->avail_in + (BrotliGetAvailableBits(br) >> 3);
-        }
-
-        /* Copies remaining input bytes stored in the bit reader to the output. Value
-   num may not be larger than BrotliGetRemainingBytes. The bit reader must be
-   warmed up again after this. */
-
-        private static unsafe void BrotliCopyBytes(byte* dest,
-            BrotliBitReader* br, size_t num) {
-            while (BrotliGetAvailableBits(br) >= 8 && num > 0) {
-                *dest = (byte) BrotliGetBitsUnmasked(br);
-                BrotliDropBits(br, 8);
-                ++dest;
-                --num;
-            }
-            memcpy(dest, br->next_in, num);
-            br->avail_in -= num;
-            br->next_in += num;
-        }
-
         /* Allocates ring-buffer.
 
-   s->ringbuffer_size MUST be updated by BrotliCalculateRingBufferSize before
-   this function is called.
+           s->ringbuffer_size MUST be updated by BrotliCalculateRingBufferSize before
+           this function is called.
 
-   Last two bytes of ring-buffer are initialized to 0, so context calculation
-   could be done uniformly for the first two and all other positions.
+           Last two bytes of ring-buffer are initialized to 0, so context calculation
+           could be done uniformly for the first two and all other positions.
 
-   Custom dictionary, if any, is copied to the end of ring-buffer.
-*/
-
+           Custom dictionary, if any, is copied to the end of ring-buffer.
+        */
         private static unsafe bool BrotliEnsureRingBuffer(
             ref BrotliDecoderState s) {
             /* We need the slack region for the following reasons:
@@ -657,7 +383,7 @@ namespace BrotliSharpLib {
                             BrotliCopyBytes(&s.ringbuffer[s.pos], br, (size_t) nbytes);
                             s.pos += nbytes;
                             s.meta_block_remaining_len -= nbytes;
-                                if (s.pos < 1 << (int) s.window_bits) {
+                            if (s.pos < 1 << (int) s.window_bits) {
                                 if (s.meta_block_remaining_len == 0) {
                                     return BrotliDecoderErrorCode.BROTLI_DECODER_SUCCESS;
                                 }
@@ -698,7 +424,6 @@ namespace BrotliSharpLib {
            Totally 1..4 symbols are read, 1..10 bits each.
            The list of symbols MUST NOT contain duplicates.
          */
-
         private static unsafe BrotliDecoderErrorCode ReadSimpleHuffmanSymbols(
             uint alphabet_size, ref BrotliDecoderState s) {
             /* max_bits == 1..10; symbol == 0..3; 1..40 bits will be read. */
@@ -736,7 +461,6 @@ namespace BrotliSharpLib {
         }
 
         /* Decodes a number in the range [0..255], by reading 1 - 11 bits. */
-
         private static unsafe BrotliDecoderErrorCode DecodeVarLenUint8(
             ref BrotliDecoderState s, BrotliBitReader* br, uint* value) {
             uint bits;
@@ -779,111 +503,6 @@ namespace BrotliSharpLib {
             }
         }
 
-        private static unsafe uint BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
-            int root_bits,
-            ushort* val,
-            uint num_symbols) {
-            uint table_size = 1;
-            var goal_size = 1U << root_bits;
-            switch (num_symbols) {
-                case 0:
-                    table[0].bits = 0;
-                    table[0].value = val[0];
-                    break;
-                case 1:
-                    table[0].bits = 1;
-                    table[1].bits = 1;
-                    if (val[1] > val[0]) {
-                        table[0].value = val[0];
-                        table[1].value = val[1];
-                    }
-                    else {
-                        table[0].value = val[1];
-                        table[1].value = val[0];
-                    }
-                    table_size = 2;
-                    break;
-                case 2:
-                    table[0].bits = 1;
-                    table[0].value = val[0];
-                    table[2].bits = 1;
-                    table[2].value = val[0];
-                    if (val[2] > val[1]) {
-                        table[1].value = val[1];
-                        table[3].value = val[2];
-                    }
-                    else {
-                        table[1].value = val[2];
-                        table[3].value = val[1];
-                    }
-                    table[1].bits = 2;
-                    table[3].bits = 2;
-                    table_size = 4;
-                    break;
-                case 3: {
-                    int i, k;
-                    for (i = 0; i < 3; ++i) {
-                        for (k = i + 1; k < 4; ++k) {
-                            if (val[k] < val[i]) {
-                                var t = val[k];
-                                val[k] = val[i];
-                                val[i] = t;
-                            }
-                        }
-                    }
-                    for (i = 0; i < 4; ++i) {
-                        table[i].bits = 2;
-                    }
-                    table[0].value = val[0];
-                    table[2].value = val[1];
-                    table[1].value = val[2];
-                    table[3].value = val[3];
-                    table_size = 4;
-                    break;
-                }
-                case 4: {
-                    int i;
-                    if (val[3] < val[2]) {
-                        var t = val[3];
-                        val[3] = val[2];
-                        val[2] = t;
-                    }
-                    for (i = 0; i < 7; ++i) {
-                        table[i].value = val[0];
-                        table[i].bits = (byte) (1 + (i & 1));
-                    }
-                    table[1].value = val[1];
-                    table[3].value = val[2];
-                    table[5].value = val[1];
-                    table[7].value = val[3];
-                    table[3].bits = 3;
-                    table[7].bits = 3;
-                    table_size = 8;
-                    break;
-                }
-            }
-            while (table_size != goal_size) {
-                memcpy(&table[table_size], &table[0],
-                    (size_t) table_size*sizeof(HuffmanCode));
-                table_size <<= 1;
-            }
-            return goal_size;
-        }
-
-
-        /* Tries to peek the specified amount of bits. Returns 0, if there is not
-   enough input. */
-
-        private static unsafe bool BrotliSafeGetBits(
-            BrotliBitReader* br, uint n_bits, uint* val) {
-            while (BrotliGetAvailableBits(br) < n_bits) {
-                if (!BrotliPullByte(br)) {
-                    return false;
-                }
-            }
-            *val = (uint) (BrotliGetBitsUnmasked(br) & BitMask(n_bits));
-            return true;
-        }
 
         /* Reads and decodes 15..18 codes using static prefix code.
            Each code is 2..4 bits long. In total 30..72 bits are used. */
@@ -936,92 +555,15 @@ namespace BrotliSharpLib {
         }
 
 
-        private static unsafe void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
-            byte* code_lengths,
-            ushort* count) {
-            HuffmanCode code; /* current table entry */
-            int symbol; /* symbol index in original or sorted table */
-            reg_t key; /* prefix code */
-            reg_t key_step; /* prefix code addend */
-            int step; /* step size to replicate values in current table */
-            int table_size; /* size of current table */
-            var sorted = new int[BROTLI_CODE_LENGTH_CODES]; /* symbols sorted by code length */
-            /* offsets in sorted table for each length */
-            var offset = new int[BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH + 1];
-            int bits;
-            int bits_count;
-
-            /* generate offsets into sorted symbol table by code length */
-            symbol = -1;
-            bits = 1;
-            for (var i = 1; i <= 4; i *= 2) {
-                if ((BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH & i) != 0) {
-                    for (var x = 0; x < i; x++) {
-                        symbol += count[bits];
-                        offset[bits] = symbol;
-                        bits++;
-                    }
-                }
-            }
-
-            /* Symbols with code length 0 are placed after all other symbols. */
-            offset[0] = BROTLI_CODE_LENGTH_CODES - 1;
-
-            /* sort symbols by length, by symbol order within each length */
-            symbol = BROTLI_CODE_LENGTH_CODES;
-            do {
-                for (var i = 1; i <= 4; i *= 2) {
-                    if ((6 & i) != 0) {
-                        for (var x = 0; x < i; x++) {
-                            symbol--;
-                            sorted[offset[code_lengths[symbol]]--] = symbol;
-                        }
-                    }
-                }
-            } while (symbol != 0);
-
-            table_size = 1 << BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH;
-
-            /* Special case: all symbols but one have 0 code length. */
-            if (offset[0] == 0) {
-                code.bits = 0;
-                code.value = (ushort) sorted[0];
-                for (key = 0; key < (reg_t) table_size; ++key) {
-                    table[key] = code;
-                }
-                return;
-            }
-
-            /* fill in table */
-            key = 0;
-            key_step = BROTLI_REVERSE_BITS_LOWEST;
-            symbol = 0;
-            bits = 1;
-            step = 2;
-            do {
-                code.bits = (byte) bits;
-                for (bits_count = count[bits]; bits_count != 0; --bits_count) {
-                    code.value = (ushort) sorted[symbol++];
-                    //Debug.WriteLine(code.bits + "," + code.value);
-                    ReplicateValue(&table[BrotliReverseBits(key)], step, table_size, code);
-                    key += key_step;
-                }
-                step <<= 1;
-                key_step >>= 1;
-            } while (++bits <= BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH);
-        }
-
         /* Returns reverse(num >> BROTLI_REVERSE_BITS_BASE, BROTLI_REVERSE_BITS_MAX),
-   where reverse(value, len) is the bit-wise reversal of the len least
-   significant bits of value. */
-
+           where reverse(value, len) is the bit-wise reversal of the len least
+           significant bits of value. */
         private static reg_t BrotliReverseBits(reg_t num) {
             return (uint) kReverseBits[num];
         }
 
         /* Stores code in table[0], table[step], table[2*step], ..., table[end] */
         /* Assumes that end is an integer multiple of step */
-
         private static unsafe void ReplicateValue(HuffmanCode* table,
             int step, int end,
             HuffmanCode code) {
@@ -1031,90 +573,6 @@ namespace BrotliSharpLib {
             } while (end > 0);
         }
 
-        /* Checks if there is at least |num| bytes left in the input ring-buffer
-   (excluding the bits remaining in br->val_). */
-
-        private static unsafe bool BrotliCheckInputAmount(
-            BrotliBitReader* br, size_t num) {
-            return br->avail_in >= num;
-        }
-
-        private static unsafe ulong BrotliLoad64LE(byte* bIn) {
-            return *(ulong*) bIn;
-        }
-
-        private static unsafe uint BrotliLoad32LE(byte* bIn) {
-            return *(uint*) bIn;
-        }
-
-        private static unsafe ushort BrotliLoad16LE(byte* bIn) {
-            return *(ushort*) bIn;
-        }
-
-        /* Guarantees that there are at least n_bits + 1 bits in accumulator.
-   Precondition: accumulator contains at least 1 bit.
-   n_bits should be in the range [1..24] for regular build. For portable
-   non-64-bit little-endian build only 16 bits are safe to request. */
-
-        private static unsafe void BrotliFillBitWindow(
-            BrotliBitReader* br, uint n_bits) {
-            if (Is64Bit) {
-                if (!BROTLI_ALIGNED_READ && n_bits != 0 && (n_bits <= 8)) {
-                    if (br->bit_pos_ >= 56) {
-                        br->val_ >>= 56;
-                        br->bit_pos_ ^= 56; /* here same as -= 56 because of the if condition */
-                        br->val_ |= BrotliLoad64LE(br->next_in) << 8;
-                        br->avail_in -= 7;
-                        br->next_in += 7;
-                    }
-                }
-                else if (!BROTLI_ALIGNED_READ && n_bits != 0 && (n_bits <= 16)) {
-                    if (br->bit_pos_ >= 48) {
-                        br->val_ >>= 48;
-                        br->bit_pos_ ^= 48; /* here same as -= 48 because of the if condition */
-                        br->val_ |= BrotliLoad64LE(br->next_in) << 16;
-                        br->avail_in -= 6;
-                        br->next_in += 6;
-                    }
-                }
-                else {
-                    if (br->bit_pos_ >= 32) {
-                        br->val_ >>= 32;
-                        br->bit_pos_ ^= 32; /* here same as -= 32 because of the if condition */
-                        br->val_ |= ((ulong) BrotliLoad32LE(br->next_in)) << 32;
-                        br->avail_in -= BROTLI_SHORT_FILL_BIT_WINDOW_READ;
-                        br->next_in += BROTLI_SHORT_FILL_BIT_WINDOW_READ;
-                    }
-                }
-            }
-            else {
-                if (!BROTLI_ALIGNED_READ && n_bits != 0 && (n_bits <= 8)) {
-                    if (br->bit_pos_ >= 24) {
-                        br->val_ >>= 24;
-                        br->bit_pos_ ^= 24; /* here same as -= 24 because of the if condition */
-                        br->val_ |= BrotliLoad32LE(br->next_in) << 8;
-                        br->avail_in -= 3;
-                        br->next_in += 3;
-                    }
-                }
-                else {
-                    if (br->bit_pos_ >= 16) {
-                        br->val_ >>= 16;
-                        br->bit_pos_ ^= 16; /* here same as -= 16 because of the if condition */
-                        br->val_ |= ((uint) BrotliLoad16LE(br->next_in)) << 16;
-                        br->avail_in -= BROTLI_SHORT_FILL_BIT_WINDOW_READ;
-                        br->next_in += BROTLI_SHORT_FILL_BIT_WINDOW_READ;
-                    }
-                }
-            }
-        }
-
-        /* Mostly like BrotliFillBitWindow, but guarantees only 16 bits and reads no
-           more than BROTLI_SHORT_FILL_BIT_WINDOW_READ bytes of input. */
-
-        private static unsafe void BrotliFillBitWindow16(BrotliBitReader* br) {
-            BrotliFillBitWindow(br, 17);
-        }
 
         /* Process single decoded symbol code length:
             A) reset the repeat variable
@@ -1123,7 +581,6 @@ namespace BrotliSharpLib {
             D) reduce the Huffman space
             E) update the histogram
          */
-
         private static unsafe void ProcessSingleCodeLength(uint code_len,
             uint* symbol, uint* repeat, uint* space,
             uint* prev_code_len, ushort* symbol_lists,
@@ -1151,7 +608,6 @@ namespace BrotliSharpLib {
            PRECONDITION: code_len == BROTLI_REPEAT_PREVIOUS_CODE_LENGTH or
                          code_len == BROTLI_REPEAT_ZERO_CODE_LENGTH
          */
-
         private static unsafe void ProcessRepeatedCodeLength(uint code_len,
             uint repeat_delta, uint alphabet_size, uint* symbol,
             uint* repeat, uint* space, uint* prev_code_len,
@@ -1197,7 +653,6 @@ namespace BrotliSharpLib {
             }
         }
 
-
         private static unsafe BrotliDecoderErrorCode SafeReadSymbolCodeLengths(
             uint alphabet_size, ref BrotliDecoderState s) {
             fixed (BrotliBitReader* br = &s.br) {
@@ -1207,7 +662,8 @@ namespace BrotliSharpLib {
                         var p = t;
                         uint code_len;
                         uint bits = 0;
-                        if (get_byte && !BrotliPullByte(br)) return BrotliDecoderErrorCode.BROTLI_DECODER_NEEDS_MORE_INPUT;
+                        if (get_byte && !BrotliPullByte(br))
+                            return BrotliDecoderErrorCode.BROTLI_DECODER_NEEDS_MORE_INPUT;
                         get_byte = false;
                         var available_bits = BrotliGetAvailableBits(br);
                         if (available_bits != 0) {
@@ -1235,8 +691,7 @@ namespace BrotliSharpLib {
                                 /* code_len == 16..17, extra_bits == 2..3 */
                                 var extra_bits = code_len - 14U;
                                 var repeat_delta = (bits >> p->bits) & BitMask(extra_bits);
-                                if (available_bits < p->bits + extra_bits)
-                                {
+                                if (available_bits < p->bits + extra_bits) {
                                     get_byte = true;
                                     continue;
                                 }
@@ -1315,9 +770,8 @@ namespace BrotliSharpLib {
         }
 
         /* Returns the table width of the next 2nd level table. count is the histogram
-   of bit lengths for the remaining symbols, len is the code length of the next
-   processed symbol */
-
+           of bit lengths for the remaining symbols, len is the code length of the next
+           processed symbol */
         private static unsafe int NextTableBitSize(ushort* count,
             int len, int root_bits) {
             var left = 1 << (len - root_bits);
@@ -1329,99 +783,6 @@ namespace BrotliSharpLib {
             }
             return len - root_bits;
         }
-
-        private static unsafe uint BrotliBuildHuffmanTable(HuffmanCode* root_table,
-            int root_bits,
-            ushort* symbol_lists,
-            ushort* count) {
-            HuffmanCode code; /* current table entry */
-            HuffmanCode* table; /* next available space in table */
-            int len; /* current code length */
-            int symbol; /* symbol index in original or sorted table */
-            reg_t key; /* prefix code */
-            reg_t key_step; /* prefix code addend */
-            reg_t sub_key; /* 2nd level table prefix code */
-            reg_t sub_key_step; /* 2nd level table prefix code addend */
-            int step; /* step size to replicate values in current table */
-            int table_bits; /* key length of current table */
-            int table_size; /* size of current table */
-            int total_size; /* sum of root table size and 2nd level table sizes */
-            var max_length = -1;
-            int bits;
-            int bits_count;
-
-            while (symbol_lists[max_length] == 0xFFFF) max_length--;
-            max_length += BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1;
-
-            table = root_table;
-            table_bits = root_bits;
-            table_size = 1 << table_bits;
-            total_size = table_size;
-
-            /* fill in root table */
-            /* let's reduce the table size to a smaller size if possible, and */
-            /* create the repetitions by memcpy if possible in the coming loop */
-            if (table_bits > max_length) {
-                table_bits = max_length;
-                table_size = 1 << table_bits;
-            }
-            key = 0;
-            key_step = BROTLI_REVERSE_BITS_LOWEST;
-            bits = 1;
-            step = 2;
-            do {
-                code.bits = (byte) bits;
-                symbol = bits - (BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1);
-                for (bits_count = count[bits]; bits_count != 0; --bits_count) {
-                    symbol = symbol_lists[symbol];
-                    code.value = (ushort) symbol;
-                    ReplicateValue(&table[BrotliReverseBits(key)], step, table_size, code);
-                    key += key_step;
-                }
-                step <<= 1;
-                key_step >>= 1;
-            } while (++bits <= table_bits);
-
-            /* if root_bits != table_bits we only created one fraction of the */
-            /* table, and we need to replicate it now. */
-            while (total_size != table_size) {
-                memcpy(&table[table_size], &table[0],
-                    (size_t) table_size*sizeof(HuffmanCode));
-                table_size <<= 1;
-            }
-
-            /* fill in 2nd level tables and add pointers to root table */
-            key_step = BROTLI_REVERSE_BITS_LOWEST >> (root_bits - 1);
-            sub_key = (BROTLI_REVERSE_BITS_LOWEST << 1);
-            sub_key_step = BROTLI_REVERSE_BITS_LOWEST;
-            for (len = root_bits + 1, step = 2; len <= max_length; ++len) {
-                symbol = len - (BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1);
-                for (; count[len] != 0; --count[len]) {
-                    if (sub_key == (BROTLI_REVERSE_BITS_LOWEST << 1)) {
-                        table += table_size;
-                        table_bits = NextTableBitSize(count, len, root_bits);
-                        table_size = 1 << table_bits;
-                        total_size += table_size;
-                        sub_key = BrotliReverseBits(key);
-                        key += key_step;
-                        root_table[sub_key].bits = (byte) (table_bits + root_bits);
-                        root_table[sub_key].value =
-                            (ushort) ((size_t) (table - root_table) - sub_key);
-                        sub_key = 0;
-                    }
-                    code.bits = (byte) (len - root_bits);
-                    symbol = symbol_lists[symbol];
-                    code.value = (ushort) symbol;
-                    ReplicateValue(
-                        &table[BrotliReverseBits(sub_key)], step, table_size, code);
-                    sub_key += sub_key_step;
-                }
-                step <<= 1;
-                sub_key_step >>= 1;
-            }
-            return (uint) total_size;
-        }
-
 
         /* Decodes the Huffman tables.
            There are 2 scenarios:
@@ -1435,7 +796,6 @@ namespace BrotliSharpLib {
             B.2) Decoded table is used to decode code lengths of symbols in resulting
                  Huffman table. In worst case 3520 bits are read.
         */
-
         private static unsafe BrotliDecoderErrorCode ReadHuffmanCode(uint alphabet_size,
             HuffmanCode* table,
             uint* opt_table_size,
@@ -1444,7 +804,7 @@ namespace BrotliSharpLib {
                 /* Unnecessary masking, but might be good for safety. */
                 alphabet_size &= 0x3ff;
                 /* State machine */
-                for (;;) { 
+                for (;;) {
                     switch (s.substate_huffman) {
                         case BrotliRunningHuffmanState.BROTLI_STATE_HUFFMAN_NONE:
                             fixed (uint* slc = &s.sub_loop_counter)
@@ -1458,7 +818,7 @@ namespace BrotliSharpLib {
                                 s.space = 32;
                                 s.repeat = 0; /* num_codes */
                                 fixed (ushort* clh = s.code_length_histo)
-                                    memset(&clh[0], 0, sizeof(ushort)*
+                                    memset(&clh[0], 0, sizeof(ushort) *
                                                        (BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH + 1));
                                 fixed (byte* clcl = s.code_length_code_lengths)
                                     memset(&clcl[0], 0,
@@ -1521,7 +881,7 @@ namespace BrotliSharpLib {
                                 BrotliBuildCodeLengthsHuffmanTable(t,
                                     clcl,
                                     clh);
-                                memset(&clh[0], 0, sizeof(ushort)*16);
+                                memset(&clh[0], 0, sizeof(ushort) * 16);
                                 fixed (int* ns = s.next_symbol)
                                     for (i = 0; i <= BROTLI_HUFFMAN_MAX_CODE_LENGTH; ++i) {
                                         ns[i] = (int) i - (BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1);
@@ -1570,10 +930,9 @@ namespace BrotliSharpLib {
         }
 
         /* Decodes the Huffman code.
-       This method doesn't read data from the bit reader, BUT drops the amount of
-       bits that correspond to the decoded symbol.
-       bits MUST contain at least 15 (BROTLI_HUFFMAN_MAX_CODE_LENGTH) valid bits. */
-
+           This method doesn't read data from the bit reader, BUT drops the amount of
+           bits that correspond to the decoded symbol.
+           bits MUST contain at least 15 (BROTLI_HUFFMAN_MAX_CODE_LENGTH) valid bits. */
         private static unsafe uint DecodeSymbol(uint bits,
             HuffmanCode* table,
             BrotliBitReader* br) {
@@ -1590,7 +949,6 @@ namespace BrotliSharpLib {
 
         /* Same as DecodeSymbol, but it is known that there is less than 15 bits of
             input are currently available. */
-
         private static unsafe bool SafeDecodeSymbol(
             HuffmanCode* table, BrotliBitReader* br, uint* result) {
             uint val;
@@ -1641,10 +999,8 @@ namespace BrotliSharpLib {
             return SafeDecodeSymbol(table, br, result);
         }
 
-
         /* WARNING: if state is not BROTLI_STATE_READ_BLOCK_LENGTH_NONE, then
             reading can't be continued with ReadBlockLength. */
-
         private static unsafe bool SafeReadBlockLength(
             ref BrotliDecoderState s, uint* result, HuffmanCode* table,
             BrotliBitReader* br) {
@@ -1673,7 +1029,6 @@ namespace BrotliSharpLib {
         }
 
         /* Reads 1..256 2-bit context modes. */
-
         private static unsafe BrotliDecoderErrorCode ReadContextModes(ref BrotliDecoderState s) {
             fixed (BrotliBitReader* br = &s.br) {
                 var i = s.loop_counter;
@@ -1692,21 +1047,20 @@ namespace BrotliSharpLib {
         }
 
         /* Transform:
-    1) initialize list L with values 0, 1,... 255
-    2) For each input element X:
-    2.1) let Y = L[X]
-    2.2) remove X-th element from L
-    2.3) prepend Y to L
-    2.4) append Y to output
+            1) initialize list L with values 0, 1,... 255
+            2) For each input element X:
+            2.1) let Y = L[X]
+            2.2) remove X-th element from L
+            2.3) prepend Y to L
+            2.4) append Y to output
 
-   In most cases max(Y) <= 7, so most of L remains intact.
-   To reduce the cost of initialization, we reuse L, remember the upper bound
-   of Y values, and reinitialize only first elements in L.
+           In most cases max(Y) <= 7, so most of L remains intact.
+           To reduce the cost of initialization, we reuse L, remember the upper bound
+           of Y values, and reinitialize only first elements in L.
 
-   Most of input values are 0 and 1. To reduce number of branches, we replace
-   inner for loop with do-while.
- */
-
+           Most of input values are 0 and 1. To reduce number of branches, we replace
+           inner for loop with do-while.
+         */
         private static unsafe void InverseMoveToFrontTransform(
             byte* v, uint v_len, ref BrotliDecoderState state) {
             /* Reinitialize elements that could have been changed. */
@@ -1748,15 +1102,14 @@ namespace BrotliSharpLib {
         }
 
         /* Decodes a context map.
-   Decoding is done in 4 phases:
-    1) Read auxiliary information (6..16 bits) and allocate memory.
-       In case of trivial context map, decoding is finished at this phase.
-    2) Decode Huffman table using ReadHuffmanCode function.
-       This table will be used for reading context map items.
-    3) Read context map items; "0" values could be run-length encoded.
-    4) Optionally, apply InverseMoveToFront transform to the resulting map.
- */
-
+           Decoding is done in 4 phases:
+            1) Read auxiliary information (6..16 bits) and allocate memory.
+               In case of trivial context map, decoding is finished at this phase.
+            2) Decode Huffman table using ReadHuffmanCode function.
+               This table will be used for reading context map items.
+            3) Read context map items; "0" values could be run-length encoded.
+            4) Optionally, apply InverseMoveToFront transform to the resulting map.
+         */
         private static unsafe BrotliDecoderErrorCode DecodeContextMap(uint context_map_size,
             uint* num_htrees,
             byte** context_map_arg,
@@ -1836,7 +1189,8 @@ namespace BrotliSharpLib {
                                         (byte) (code - max_run_length_prefix);
                                     continue;
                                 }
-                            } else {
+                            }
+                            else {
                                 skip_preamble = false;
                             }
                             /* RLE sub-stage. */
@@ -1907,24 +1261,7 @@ namespace BrotliSharpLib {
             }
         }
 
-
-        private static unsafe bool BrotliDecoderHuffmanTreeGroupInit(ref BrotliDecoderState s,
-            HuffmanTreeGroup* group, uint alphabet_size, uint ntrees) {
-            /* Pack two allocations into one */
-            size_t max_table_size = (int) kMaxHuffmanTableSize[(alphabet_size + 31) >> 5];
-            size_t code_size = sizeof(HuffmanCode)*ntrees*max_table_size;
-            size_t htree_size = IntPtr.Size*ntrees;
-            /* Pointer alignment is, hopefully, wider than sizeof(HuffmanCode). */
-            var p = (HuffmanCode**) s.alloc_func(s.memory_manager_opaque, code_size + htree_size);
-            group->alphabet_size = (ushort) alphabet_size;
-            group->num_htrees = (ushort) ntrees;
-            group->htrees = (HuffmanCode**) p;
-            group->codes = (HuffmanCode*) (&p[ntrees]);
-            return p != null;
-        }
-
         /* Decodes a series of Huffman table using ReadHuffmanCode function. */
-
         private static unsafe BrotliDecoderErrorCode HuffmanTreeGroupDecode(
             HuffmanTreeGroup* group, ref BrotliDecoderState s) {
             if (s.substate_tree_group != BrotliRunningTreeGroupState.BROTLI_STATE_TREE_GROUP_LOOP) {
@@ -1973,25 +1310,14 @@ namespace BrotliSharpLib {
             return BrotliCheckInputAmount(br, num);
         }
 
-        /* Like BrotliGetBits, but does not mask the result.
-        The result contains at least 16 valid bits. */
-
-        private static unsafe uint BrotliGet16BitsUnmasked(
-            BrotliBitReader* br) {
-            BrotliFillBitWindow(br, 16);
-            return BrotliGetBitsUnmasked(br);
-        }
-
         /* Reads and decodes the next Huffman code from bit-stream.
         This method peeks 16 bits of input and drops 0 - 15 of them. */
-
         private static unsafe uint ReadSymbol(HuffmanCode* table,
             BrotliBitReader* br) {
             return DecodeSymbol(BrotliGet16BitsUnmasked(br), table, br);
         }
 
         /* Decodes a block length by reading 3..39 bits. */
-
         private static unsafe uint ReadBlockLength(HuffmanCode* table,
             BrotliBitReader* br) {
             uint code;
@@ -2001,59 +1327,21 @@ namespace BrotliSharpLib {
             return kBlockLengthPrefixCode[code].offset + BrotliReadBits(br, nbits);
         }
 
-        /* Reads the specified number of bits from |br| and advances the bit pos.
-        Assumes that there is enough input to perform BrotliFillBitWindow. */
-
-        private static unsafe uint BrotliReadBits(
-            BrotliBitReader* br, uint n_bits) {
-            if (Is64Bit || (n_bits <= 16)) {
-                uint val;
-                BrotliFillBitWindow(br, n_bits);
-                BrotliTakeBits(br, n_bits, &val);
-                return val;
-            }
-            else {
-                uint low_val;
-                uint high_val;
-                BrotliFillBitWindow(br, 16);
-                BrotliTakeBits(br, 16, &low_val);
-                BrotliFillBitWindow(br, 8);
-                BrotliTakeBits(br, n_bits - 16, &high_val);
-                return low_val | (high_val << 16);
-            }
-        }
-
-        private static unsafe void BrotliBitReaderSaveState(
-            BrotliBitReader* from, BrotliBitReaderState* to) {
-            to->val_ = from->val_;
-            to->bit_pos_ = from->bit_pos_;
-            to->next_in = from->next_in;
-            to->avail_in = from->avail_in;
-        }
-
-        private static unsafe void BrotliBitReaderRestoreState(
-            BrotliBitReader* to, BrotliBitReaderState* from) {
-            to->val_ = from->val_;
-            to->bit_pos_ = from->bit_pos_;
-            to->next_in = from->next_in;
-            to->avail_in = from->avail_in;
-        }
 
         /* Decodes a command or literal and updates block type ring-buffer.
-        Reads 3..54 bits. */
-
+           Reads 3..54 bits. */
         private static unsafe bool DecodeBlockTypeAndLength(
             int safe, ref BrotliDecoderState s, int tree_type) {
             fixed (uint* nbt = s.num_block_types) {
                 var max_block_type = nbt[tree_type];
                 var type_tree = &s.block_type_trees[
-                    tree_type*BROTLI_HUFFMAN_MAX_SIZE_258];
+                    tree_type * BROTLI_HUFFMAN_MAX_SIZE_258];
                 var len_tree = &s.block_len_trees[
-                    tree_type*BROTLI_HUFFMAN_MAX_SIZE_26];
+                    tree_type * BROTLI_HUFFMAN_MAX_SIZE_26];
                 fixed (BrotliBitReader* br = &s.br)
                 fixed (uint* btr = s.block_type_rb)
                 fixed (uint* bl = s.block_length) {
-                    var ringbuffer = &btr[tree_type*2];
+                    var ringbuffer = &btr[tree_type * 2];
                     uint block_type;
 
                     /* Read 0..15 + 3..39 bits */
@@ -2092,10 +1380,8 @@ namespace BrotliSharpLib {
             }
         }
 
-
         /* Block switch for insert/copy length.
            Reads 3..54 bits. */
-
         private static unsafe bool DecodeCommandBlockSwitchInternal(
             int safe, ref BrotliDecoderState s) {
             if (!DecodeBlockTypeAndLength(safe, ref s, 1)) {
@@ -2177,16 +1463,7 @@ namespace BrotliSharpLib {
             return ReadCommandInternal(1, ref s, br, insert_length);
         }
 
-        /* Returns the specified number of bits from |br| without advancing bit pos. */
-
-        private static unsafe uint BrotliGetBits(
-            BrotliBitReader* br, uint n_bits) {
-            BrotliFillBitWindow(br, n_bits);
-            return (uint) (BrotliGetBitsUnmasked(br) & BitMask(n_bits));
-        }
-
         /* Makes a look-up in first level Huffman table. Peeks 8 bits. */
-
         private static unsafe void PreloadSymbol(int safe,
             HuffmanCode* table,
             BrotliBitReader* br,
@@ -2201,8 +1478,7 @@ namespace BrotliSharpLib {
         }
 
         /* Decodes the block type and updates the state for literal context.
-   Reads 3..54 bits. */
-
+           Reads 3..54 bits. */
         private static unsafe bool DecodeLiteralBlockSwitchInternal(
             int safe, ref BrotliDecoderState s) {
             if (!DecodeBlockTypeAndLength(safe, ref s, 0)) {
@@ -2224,7 +1500,6 @@ namespace BrotliSharpLib {
 
         /* Decodes the next Huffman code using data prepared by PreloadSymbol.
            Reads 0 - 15 bits. Also peeks 8 following bits. */
-
         private static unsafe uint ReadPreloadedSymbol(HuffmanCode* table,
             BrotliBitReader* br,
             uint* bits,
@@ -2247,8 +1522,7 @@ namespace BrotliSharpLib {
         }
 
         /* Block switch for distance codes.
-   Reads 3..54 bits. */
-
+           Reads 3..54 bits. */
         private static unsafe bool DecodeDistanceBlockSwitchInternal(
             int safe, ref BrotliDecoderState s) {
             if (!DecodeBlockTypeAndLength(safe, ref s, 2)) {
@@ -2306,7 +1580,6 @@ namespace BrotliSharpLib {
         }
 
         /* Precondition: s->distance_code < 0 */
-
         private static unsafe bool ReadDistanceInternal(
             int safe, ref BrotliDecoderState s, BrotliBitReader* br) {
             fixed (uint* bl = s.block_length) {
@@ -2378,72 +1651,7 @@ namespace BrotliSharpLib {
         private static unsafe bool SafeReadDistance(
             ref BrotliDecoderState s, BrotliBitReader* br) {
             return ReadDistanceInternal(1, ref s, br);
-        }
-
-        private static unsafe int ToUpperCase(byte* p) {
-            if (p[0] < 0xc0) {
-                if (p[0] >= 'a' && p[0] <= 'z') {
-                    p[0] ^= 32;
-                }
-                return 1;
-            }
-            /* An overly simplified uppercasing model for UTF-8. */
-            if (p[0] < 0xe0) {
-                p[1] ^= 32;
-                return 2;
-            }
-            /* An arbitrary transform for three byte characters. */
-            p[2] ^= 5;
-            return 3;
-        }
-
-        private static unsafe int TransformDictionaryWord(
-            byte* dst, byte* word, int len, int transform) {
-            var idx = 0;
-            {
-                fixed (char* kps = kPrefixSuffix) {
-                    var prefix = &kps[kTransforms[transform].prefix_id];
-                    while (*prefix != 0) {
-                        dst[idx++] = (byte) *prefix++;
-                    }
-                }
-            }
-            {
-                int t = kTransforms[transform].transform;
-                var i = 0;
-                var skip = t - ((int) WordTransformType.kOmitFirst1 - 1);
-                if (skip > 0) {
-                    word += skip;
-                    len -= skip;
-                }
-                else if (t <= (int) WordTransformType.kOmitLast9) {
-                    len -= t;
-                }
-                while (i < len) {
-                    dst[idx++] = word[i++];
-                }
-                if (t == (int) WordTransformType.kUppercaseFirst) {
-                    ToUpperCase(&dst[idx - len]);
-                }
-                else if (t == (int) WordTransformType.kUppercaseAll) {
-                    var uppercase = &dst[idx - len];
-                    while (len > 0) {
-                        var step = ToUpperCase(uppercase);
-                        uppercase += step;
-                        len -= step;
-                    }
-                }
-            }
-            {
-                fixed (char* kps = kPrefixSuffix) {
-                    var suffix = &kps[kTransforms[transform].suffix_id];
-                    while (*suffix != 0) {
-                        dst[idx++] = (byte) *suffix++;
-                    }
-                }
-                return idx;
-            }
-        }
+        } 
 
         private static unsafe BrotliDecoderErrorCode ProcessCommandsInternal(
             int safe, ref BrotliDecoderState s) {
@@ -2626,9 +1834,10 @@ namespace BrotliSharpLib {
                         --s.dist_rb_idx;
                         fixed (int* dr = s.dist_rb)
                             s.distance_code = dr[s.dist_rb_idx & 3];
-                    } else {
+                    }
+                    else {
                         /* Read distance code in the command, unless it was implicitly zero. */
-                        if (bl[2] == 0)  {
+                        if (bl[2] == 0) {
                             DecodeDistanceBlockSwitch(ref s);
                         }
                         ReadDistance(ref s, br);
@@ -2649,7 +1858,7 @@ namespace BrotliSharpLib {
                             var mask = (int) BitMask(shift);
                             var word_idx = word_id & mask;
                             var transform_idx = word_id >> (int) shift;
-                            offset += word_idx*i;
+                            offset += word_idx * i;
                             if (transform_idx < kNumTransforms) {
                                 fixed (byte* dict = kBrotliDictionary) {
                                     var word = &dict[offset];
@@ -2775,23 +1984,6 @@ namespace BrotliSharpLib {
             group->htrees = null;
         }
 
-        private static unsafe void BrotliDecoderStateCleanupAfterMetablock(ref BrotliDecoderState s) {
-            s.free_func(s.memory_manager_opaque, s.context_modes);
-            s.context_modes = null;
-            s.free_func(s.memory_manager_opaque, s.context_map);
-            s.context_map = null;
-            s.free_func(s.memory_manager_opaque, s.dist_context_map);
-            s.dist_context_map = null;
-
-            fixed (HuffmanTreeGroup* lh = &s.literal_hgroup)
-            fixed (HuffmanTreeGroup* ich = &s.insert_copy_hgroup)
-            fixed (HuffmanTreeGroup* dh = &s.distance_hgroup) {
-                BrotliDecoderHuffmanTreeGroupRelease(ref s, lh);
-                BrotliDecoderHuffmanTreeGroupRelease(ref s, ich);
-                BrotliDecoderHuffmanTreeGroupRelease(ref s, dh);
-            }
-        }
-
         private static unsafe BrotliDecoderResult BrotliDecoderDecompressStream(
             ref BrotliDecoderState s, size_t* available_in, byte** next_in,
             size_t* available_out, byte** next_out, size_t* total_out) {
@@ -2906,14 +2098,14 @@ namespace BrotliSharpLib {
 
                             /* Allocate memory for both block_type_trees and block_len_trees. */
                             s.block_type_trees = (HuffmanCode*) s.alloc_func(s.memory_manager_opaque,
-                                sizeof(HuffmanCode)*3*
+                                sizeof(HuffmanCode) * 3 *
                                 (BROTLI_HUFFMAN_MAX_SIZE_258 + BROTLI_HUFFMAN_MAX_SIZE_26));
                             if (s.block_type_trees == null) {
                                 result = BrotliDecoderErrorCode.BROTLI_DECODER_ERROR_ALLOC_BLOCK_TYPE_TREES;
                                 break;
                             }
                             s.block_len_trees =
-                                s.block_type_trees + 3*BROTLI_HUFFMAN_MAX_SIZE_258;
+                                s.block_type_trees + 3 * BROTLI_HUFFMAN_MAX_SIZE_258;
 
                             s.state = BrotliRunningState.BROTLI_STATE_METABLOCK_BEGIN;
                             goto case BrotliRunningState.BROTLI_STATE_METABLOCK_BEGIN;
@@ -2994,7 +2186,7 @@ namespace BrotliSharpLib {
                             /* No break, continue to next state */
                             goto case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_1;
                         case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_1: {
-                            var tree_offset = s.loop_counter*BROTLI_HUFFMAN_MAX_SIZE_258;
+                            var tree_offset = s.loop_counter * BROTLI_HUFFMAN_MAX_SIZE_258;
                             fixed (uint* nbt = s.num_block_types)
                                 result = ReadHuffmanCode(nbt[s.loop_counter] + 2,
                                     &s.block_type_trees[tree_offset], null, ref s);
@@ -3004,7 +2196,7 @@ namespace BrotliSharpLib {
                             goto case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_2;
                         }
                         case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_2: {
-                            var tree_offset = s.loop_counter*BROTLI_HUFFMAN_MAX_SIZE_26;
+                            var tree_offset = s.loop_counter * BROTLI_HUFFMAN_MAX_SIZE_26;
                             result = ReadHuffmanCode(BROTLI_NUM_BLOCK_LEN_SYMBOLS,
                                 &s.block_len_trees[tree_offset], null, ref s);
                             if (result != BrotliDecoderErrorCode.BROTLI_DECODER_SUCCESS) break;
@@ -3013,7 +2205,7 @@ namespace BrotliSharpLib {
                             goto case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_3;
                         }
                         case BrotliRunningState.BROTLI_STATE_HUFFMAN_CODE_3: {
-                            var tree_offset = s.loop_counter*BROTLI_HUFFMAN_MAX_SIZE_26;
+                            var tree_offset = s.loop_counter * BROTLI_HUFFMAN_MAX_SIZE_26;
                             fixed (uint* bl = s.block_length)
                                 if (!SafeReadBlockLength(ref s, &bl[s.loop_counter],
                                     &s.block_len_trees[tree_offset], br)) {
@@ -3071,7 +2263,7 @@ namespace BrotliSharpLib {
                             goto case BrotliRunningState.BROTLI_STATE_CONTEXT_MAP_2;
                         case BrotliRunningState.BROTLI_STATE_CONTEXT_MAP_2: {
                             var num_distance_codes = (uint) (s.num_direct_distance_codes +
-                                                             ((2*BROTLI_MAX_DISTANCE_BITS) <<
+                                                             ((2 * BROTLI_MAX_DISTANCE_BITS) <<
                                                               (int) s.distance_postfix_bits));
                             var allocation_success = true;
                             fixed (uint* nbt = s.num_block_types)
