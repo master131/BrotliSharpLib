@@ -1,10 +1,21 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
+        // Use preprocessor directives to optimise away some of the IL to encourage 
+        // inlining by JIT compiler
+#if X64
+        private const bool Is64Bit = true;
+        private const int WordSize = 64;
+#elif X86
+        private const bool Is64Bit = false;
+        private const int WordSize = 32;
+#else
         private static readonly bool Is64Bit = IntPtr.Size == 8;
         private static readonly int WordSize = IntPtr.Size * 8;
+#endif
 
         // https://github.com/dotnet/coreclr/blob/master/src/mscorlib/src/System/Buffer.cs
         private static unsafe void memcpy(void* destination, void* source, size_t length) {
@@ -310,6 +321,9 @@ namespace BrotliSharpLib {
             }
         }
 
+#if NET_45_OR_GREATER
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe void memmove16(byte* dst, byte* src) {
             if (Is64Bit) {
                 *(long*) dst = *(long*) src;
@@ -423,6 +437,9 @@ namespace BrotliSharpLib {
                 return new size_t(p);
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator +(size_t a, size_t b) {
                 return Is64Bit
                     ? new size_t((byte*) a + (ulong) b)
@@ -445,6 +462,9 @@ namespace BrotliSharpLib {
                 return new size_t((byte*) a + b);
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator -(size_t a, size_t b) {
                 return Is64Bit
                     ? new size_t((byte*) a - (ulong) b)
@@ -467,110 +487,186 @@ namespace BrotliSharpLib {
                 return new size_t((byte*) a.Value - b);
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator /(size_t a, size_t b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a / (ulong) b) : (void*) ((uint) a / (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator /(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a / (uint) b) : (void*) ((uint) a / (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator /(size_t a, uint b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a / b) : (void*) ((uint) a / b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator /(size_t a, long b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a / (ulong) b) : (void*) ((uint) a / (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator /(size_t a, ulong b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a / b) : (void*) ((uint) a / (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator *(size_t a, size_t b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a * (ulong) b) : (void*) ((uint) a * (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator *(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a * (ulong) b) : (void*) ((uint) a * (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator *(size_t a, uint b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a * b) : (void*) ((uint) a * b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator *(size_t a, long b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a * (ulong) b) : (void*) ((uint) a * (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator *(size_t a, ulong b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a * b) : (void*) ((uint) a * (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator %(size_t a, size_t b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a % (ulong) b) : (void*) ((uint) a % (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator %(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a % (ulong) b) : (void*) ((uint) a % (uint) b));
             }
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
 
             public static size_t operator %(size_t a, uint b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a % b) : (void*) ((uint) a % b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator %(size_t a, long b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a % (ulong) b) : (void*) ((uint) a % (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator %(size_t a, ulong b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a % b) : (void*) ((uint) a % (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator &(size_t a, size_t b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a & (ulong) b) : (void*) ((uint) a & (uint) b));
             }
 
             public static size_t operator &(size_t a, int b) {
-                return new size_t(Is64Bit ? (void*) ((ulong) a & (uint) b) : (void*) ((uint) a & (uint) b));
+                return new size_t((void*) ((uint)a & (uint) b));
             }
 
             public static size_t operator &(size_t a, uint b) {
-                return new size_t(Is64Bit ? (void*) ((ulong) a & b) : (void*) ((uint) a & b));
+                return new size_t((void*)((uint)a & b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator &(size_t a, long b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a & (uint) b) : (void*) ((uint) a & (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator &(size_t a, ulong b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a & b) : (void*) ((uint) a & b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator |(size_t a, size_t b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a | (ulong) b) : (void*) ((uint) a | (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator |(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a | (uint) b) : (void*) ((uint) a | (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator |(size_t a, uint b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a | b) : (void*) ((uint) a | b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator |(size_t a, long b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a | (uint) b) : (void*) ((uint) a | (uint) b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator |(size_t a, ulong b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a | b) : (void*) ((uint) a | b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator >>(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a >> b) : (void*) ((uint) a >> b));
             }
 
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static size_t operator <<(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a << b) : (void*) ((uint) a << b));
             }

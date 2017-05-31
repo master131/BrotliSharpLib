@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,6 +33,18 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <!-- Detect the target platform and define constants used for architecture specific logic -->
+  <PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
+    <DefineConstants>$(DefineConstants);X86</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PlatformTarget)' == 'x64'">
+    <DefineConstants>$(DefineConstants);X64</DefineConstants>
+  </PropertyGroup>
+  <!-- Detect if framework > 4.5 to enable support for AggressiveInlining -->
+  <PropertyGroup>
+    <DefineConstants Condition=" $(TargetFrameworkVersion.Replace('v', '')) &gt;= 4.5 ">$(DefineConstants);NET_45_OR_GREATER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -40,7 +53,7 @@
   <ItemGroup>
     <Compile Include="BitReader.cs" />
     <Compile Include="Brotli.cs" />
-    <Compile Include="BrotliNative.cs" />
+    <Compile Include="Decode.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Transform.cs" />
     <Compile Include="Helpers.cs" />
