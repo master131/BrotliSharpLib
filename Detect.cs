@@ -37,7 +37,7 @@ namespace BrotliSharpLib {
             private byte[] padding;
         }
 
-        [DllImport("libc.dll")]
+        [DllImport("libc")]
         private static extern int uname(out utsname buf);
 
         private enum Endianess {
