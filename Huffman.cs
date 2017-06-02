@@ -1,8 +1,46 @@
-﻿using size_t = BrotliSharpLib.Brotli.SizeT;
+﻿using System.Runtime.CompilerServices;
+using size_t = BrotliSharpLib.Brotli.SizeT;
 using reg_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
+        /* Returns reverse(num >> BROTLI_REVERSE_BITS_BASE, BROTLI_REVERSE_BITS_MAX),
+           where reverse(value, len) is the bit-wise reversal of the len least
+           significant bits of value. */
+        private static reg_t BrotliReverseBits(reg_t num) {
+            return (uint) kReverseBits[num];
+        }
+
+        /* Stores code in table[0], table[step], table[2*step], ..., table[end] */
+        /* Assumes that end is an integer multiple of step */
+        private static unsafe void ReplicateValue(HuffmanCode* table,
+            int step, int end,
+            HuffmanCode code) {
+            do {
+                end -= step;
+                table[end] = code;
+            } while (end > 0);
+        }
+
+        /* Returns the table width of the next 2nd level table. count is the histogram
+           of bit lengths for the remaining symbols, len is the code length of the next
+           processed symbol */
+#if NET_45_OR_GREATER
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe int NextTableBitSize(ushort* count,
+            int len, int root_bits) {
+            var l = len; // JIT ETW (Inlinee writes to an argument)
+            var left = 1 << (l - root_bits);
+            while (l < BROTLI_HUFFMAN_MAX_CODE_LENGTH) {
+                left -= count[l];
+                if (left <= 0) break;
+                ++l;
+                left <<= 1;
+            }
+            return l - root_bits;
+        }
+
         private static unsafe void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
             byte* code_lengths,
             ushort* count) {
@@ -69,7 +107,6 @@ namespace BrotliSharpLib {
                 code.bits = (byte) bits;
                 for (bits_count = count[bits]; bits_count != 0; --bits_count) {
                     code.value = (ushort) sorted[symbol++];
-                    //Debug.WriteLine(code.bits + "," + code.value);
                     ReplicateValue(&table[BrotliReverseBits(key)], step, table_size, code);
                     key += key_step;
                 }

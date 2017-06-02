@@ -55,6 +55,7 @@
     <Compile Include="Brotli.cs" />
     <Compile Include="Decode.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Detect.cs" />
     <Compile Include="Transform.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Huffman.cs" />

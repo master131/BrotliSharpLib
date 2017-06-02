@@ -10,7 +10,7 @@ namespace BrotliSharpLib {
                 BrotliDecoderStateInit(ref s);
 
                 // Create a 4k buffer to temporarily store decompressed contents.
-                byte[] writeBuf = new byte[0x1000];
+                byte[] writeBuf = new byte[0x10000];
 
                 // Pin the output buffer and the input buffer.
                 fixed (byte* outBuffer = writeBuf) {

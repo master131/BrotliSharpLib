@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using reg_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -28,7 +29,15 @@ namespace BrotliSharpLib {
 
         private const int HUFFMAN_TABLE_BITS = 8;
 
+#if X86 || X64
         private const bool BROTLI_ALIGNED_READ = false;
+#else
+        private static readonly bool BROTLI_ALIGNED_READ = !IsWhitelistedCPU();
+#endif
+
+        private static readonly Endianess BYTE_ORDER = GetEndianess();
+        private static readonly bool BROTLI_LITTLE_ENDIAN = BYTE_ORDER == Endianess.Little;
+        private static readonly bool BROTLI_BIG_ENDIAN = BYTE_ORDER == Endianess.Big;
 
         private static readonly reg_t BROTLI_REVERSE_BITS_LOWEST = (reg_t) 1 <<
                                                                    (BROTLI_REVERSE_BITS_MAX - 1 +
