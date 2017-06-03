@@ -2,7 +2,7 @@
 
 BrotliSharpLib is a full C# port of the brotli library/compression code [by Google](https://github.com/google/brotli). It is intended to be a mostly 1:1 conversion of the original C code. All code is correct as of v0.6.0 of the reference implementation.
 
-The projects targets .NET Framework 2.0 and thus uses a minimal set of APIs to ensure compatibility with a wide range of frameworks including .NET Standard and .NET Core.
+The projects targets .NET Framework 2.0 and thus uses a minimal set of APIs to ensure compatibility with a wide range of frameworks including .NET Standard and .NET Core. It also supports little-endian and big-endian architectures and is optimised for x86, x64 and ARM processors.
 
 Currently the code only supports decompression and will implement compression in the future. The underlying APIs do support streams however, a proper Stream class won't be created until compression has been completed.
 
@@ -46,3 +46,34 @@ static class HttpClientEx
 }
 ```
 
+## Performance
+### Considerations for Build
+For optimal performance, ensure to build BrotliSharpLib in **Release** mode to enable all possible JIT optimisations.
+
+Performance can also be further improved by building BrotliSharpLib using .NET Framework 4.5 or above (or any framework that supports AggressiveInlining). Selecting a specific target platform (instead of AnyCPU) where possible can also further improve performance. All of this however, is completely optional as BrotliSharpLib is designed to run in a wide range of contexts and configurations regardless.
+
+### Benchmark
+On average, BrotliSharpLib runs about 11-12% faster than the standard [C# decoding implementation provided by Google](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) which is a straight auto-conversion of the Java port using [sharpen](https://github.com/mono/sharpen).
+
+The following are benchmark results using [https://github.com/dotnet/BenchmarkDotNet](DotNetBenchmark) with BrotliSharpLib and Google's C# implementation built against .NET Framework 4.6.1.
+
+``` ini
+
+BenchmarkDotNet=v0.10.6, OS=Windows 10 Redstone 2 (10.0.15063)
+Processor=Intel Core i5-6600K CPU 3.50GHz (Skylake), ProcessorCount=4
+Frequency=3421875 Hz, Resolution=292.2374 ns, Timer=TSC
+  [Host]       : Clr 4.0.30319.42000, 64bit RyuJIT-v4.7.2046.0
+  LegacyJitX64 : Clr 4.0.30319.42000, 64bit LegacyJIT/clrjit-v4.7.2046.0;compatjit-v4.7.2046.0
+  LegacyJitX86 : Clr 4.0.30319.42000, 32bit LegacyJIT-v4.7.2046.0
+  RyuJitX64    : Clr 4.0.30319.42000, 64bit RyuJIT-v4.7.2046.0
+
+Runtime=Clr  
+```
+ |         Method |          Job |       Jit | Platform |     Mean |     Error |    StdDev |
+ |--------------- |------------- |---------- |--------- |---------:|----------:|----------:|
+ |     GoogleImpl | LegacyJitX64 | LegacyJit |      X64 | 12.49 ms | 0.1086 ms | 0.0907 ms |
+ | BrotliSharpLib | LegacyJitX64 | LegacyJit |      X64 | 11.20 ms | 0.1380 ms | 0.1290 ms |
+ |     GoogleImpl | LegacyJitX86 | LegacyJit |      X86 | 16.16 ms | 0.1305 ms | 0.1156 ms |
+ | BrotliSharpLib | LegacyJitX86 | LegacyJit |      X86 | 14.02 ms | 0.1395 ms | 0.1305 ms |
+ |     GoogleImpl |    RyuJitX64 |    RyuJit |      X64 | 12.75 ms | 0.1556 ms | 0.1456 ms |
+ | BrotliSharpLib |    RyuJitX64 |    RyuJit |      X64 | 11.63 ms | 0.0785 ms | 0.0735 ms |
