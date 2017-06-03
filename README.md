@@ -55,7 +55,7 @@ Performance can also be further improved by building BrotliSharpLib using .NET F
 ### Benchmark
 On average, BrotliSharpLib runs about 11-12% faster than the standard [C# decoding implementation provided by Google](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) which is a straight auto-conversion of the Java port using [sharpen](https://github.com/mono/sharpen).
 
-The following are benchmark results using [https://github.com/dotnet/BenchmarkDotNet](DotNetBenchmark) with BrotliSharpLib and Google's C# implementation built against .NET Framework 4.6.1.
+The following are benchmark results using [DotNetBenchmark](https://github.com/dotnet/BenchmarkDotNet) with BrotliSharpLib and Google's C# implementation built against .NET Framework 4.6.1.
 
 ``` ini
 
