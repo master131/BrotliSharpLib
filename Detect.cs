@@ -63,6 +63,7 @@ namespace BrotliSharpLib {
         /// Determines if the current CPU supports unaligned reads
         /// </summary>
         private static bool IsWhitelistedCPU() {
+#if PROPER_DETECT
             // Detect the current CPU architecture to enable unaligned reads
             switch (Environment.OSVersion.Platform) {
                 // Unix
@@ -96,6 +97,9 @@ namespace BrotliSharpLib {
             }
 
             return false;
+#else
+            return true;
+#endif
         }
     }
 }
