@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
+#if PROPER_DETECT
         [StructLayout(LayoutKind.Sequential)]
         private struct SYSTEM_INFO {
             public ushort wProcessorArchitecture;
@@ -39,6 +40,7 @@ namespace BrotliSharpLib {
 
         [DllImport("libc")]
         private static extern int uname(out utsname buf);
+#endif
 
         private enum Endianess {
             Little,

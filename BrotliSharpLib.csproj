@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BrotliSharpLib</RootNamespace>
     <AssemblyName>BrotliSharpLib</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -51,20 +51,39 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants.cs" />
     <Compile Include="Decode\BitReader.cs" />
-    <Compile Include="Decode\Brotli.cs" />
+    <Compile Include="Brotli.cs" />
     <Compile Include="Decode\Decode.cs" />
     <Compile Include="Decode\Constants.cs" />
     <Compile Include="Detect.cs" />
     <Compile Include="Decode\Transform.cs" />
+    <Compile Include="Encode\Command.cs" />
+    <Compile Include="Encode\Constants.cs" />
+    <Compile Include="Encode\Encode.cs" />
+    <Compile Include="Encode\FindMatchLength.cs" />
+    <Compile Include="Encode\Hash.cs" />
+    <Compile Include="Encode\Hashes\Hasher.cs" />
+    <Compile Include="Encode\Hashes\HashForgetfulChain.cs" />
+    <Compile Include="Encode\Hashes\HashLongestMatch.cs" />
+    <Compile Include="Encode\Hashes\HashLongestMatch64.cs" />
+    <Compile Include="Encode\Hashes\HashLongestMatchQuickly.cs" />
+    <Compile Include="Encode\Hashes\HashToBinaryTree.cs" />
+    <Compile Include="Encode\Memory.cs" />
+    <Compile Include="Encode\Quality.cs" />
+    <Compile Include="Encode\RingBuffer.cs" />
+    <Compile Include="Encode\Structures.cs" />
+    <Compile Include="Encode\Tables.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Decode\Huffman.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Decode\State.cs" />
     <Compile Include="Decode\Structures.cs" />
     <Compile Include="Decode\Tables.cs" />
+    <Compile Include="Structures.cs" />
     <Compile Include="Tables.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

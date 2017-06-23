@@ -5,10 +5,6 @@ using reg_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
-        internal unsafe delegate void* brotli_alloc_func(void* opaque, size_t size);
-
-        internal unsafe delegate void brotli_free_func(void* opaque, void* address);
-
         internal enum BrotliDecoderErrorCode {
             /* Same as BrotliDecoderResult values */
             BROTLI_DECODER_NO_ERROR,

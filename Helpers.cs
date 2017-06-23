@@ -670,6 +670,14 @@ namespace BrotliSharpLib {
             public static size_t operator <<(size_t a, int b) {
                 return new size_t(Is64Bit ? (void*) ((ulong) a << b) : (void*) ((uint) a << b));
             }
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public static size_t operator ~(size_t a)
+            {
+                return new size_t(Is64Bit ? (void*)(~(ulong) a) : (void*)(~(uint)a));
+            }
         }
     }
 }

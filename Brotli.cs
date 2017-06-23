@@ -9,7 +9,7 @@ namespace BrotliSharpLib {
                 var s = BrotliCreateDecoderState();
                 BrotliDecoderStateInit(ref s);
 
-                // Create a 4k buffer to temporarily store decompressed contents.
+                // Create a 64k buffer to temporarily store decompressed contents.
                 byte[] writeBuf = new byte[0x10000];
 
                 // Pin the output buffer and the input buffer.
@@ -51,6 +51,29 @@ namespace BrotliSharpLib {
                         return ms.ToArray();
                     }
                 }
+            }
+        }
+
+        public static unsafe byte[] CompressBuffer(byte[] buffer, int offset, int length, int quality = -1,
+            int lgwin = -1, byte[] customDictionary = null) {
+            using (var ms = new MemoryStream()) {
+                // Create the encoder state and intialise it.
+                var s = BrotliEncoderCreateInstance(null, null, null);
+
+                // Set the encoder parameters
+                if (quality != -1)
+                    BrotliEncoderSetParameter(ref s, BrotliEncoderParameter.BROTLI_PARAM_QUALITY, (uint) quality);
+
+                if (lgwin != -1)
+                    BrotliEncoderSetParameter(ref s, BrotliEncoderParameter.BROTLI_PARAM_LGWIN, (uint) lgwin);
+
+                // Set the custom dictionary
+                if (customDictionary != null) {
+                    fixed (byte* cd = customDictionary)
+                        BrotliEncoderSetCustomDictionary(ref s, customDictionary.Length, cd);
+                }
+
+                return ms.ToArray();
             }
         }
     }
