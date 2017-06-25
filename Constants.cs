@@ -10,6 +10,13 @@ namespace BrotliSharpLib
         private const int BROTLI_NUM_COMMAND_SYMBOLS = 704;
         private const int BROTLI_NUM_BLOCK_LEN_SYMBOLS = 26;
 
+        private const int BROTLI_MAX_NPOSTFIX = 3;
+        private const int BROTLI_MAX_NDIRECT = 120;
+        private const int BROTLI_NUM_DISTANCE_SYMBOLS = (BROTLI_NUM_DISTANCE_SHORT_CODES +
+                                                         BROTLI_MAX_NDIRECT +
+                                                         (BROTLI_MAX_DISTANCE_BITS <<
+                                                          (BROTLI_MAX_NPOSTFIX + 1)));
+
         private const int BROTLI_REPEAT_PREVIOUS_CODE_LENGTH = 16;
         private const int BROTLI_REPEAT_ZERO_CODE_LENGTH = 17;
         private const int BROTLI_CODE_LENGTH_CODES = BROTLI_REPEAT_ZERO_CODE_LENGTH + 1;

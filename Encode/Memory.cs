@@ -29,8 +29,7 @@ namespace BrotliSharpLib {
             return m.alloc_func(m.opaque, n);
         }
 
-        private static unsafe void BrotliFree(ref MemoryManager m, void* p)
-        {
+        private static unsafe void BrotliFree(ref MemoryManager m, void* p) {
             m.free_func(m.opaque, p);
         }
     }

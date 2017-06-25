@@ -17,6 +17,109 @@ namespace BrotliSharpLib {
         private static readonly int WordSize = IntPtr.Size * 8;
 #endif
 
+        private static readonly size_t wsize = IntPtr.Size;
+        private static readonly size_t wmask = IntPtr.Size - 1;
+
+        // https://opensource.apple.com/source/ntp/ntp-12/ntp/libntp/memmove.c
+        private static unsafe void memmove(void* destination, void* source, size_t length)
+        {
+            byte* src = (byte*)source;
+            byte* dst = (byte*)destination;
+
+            // Check that buffers do not overlap, if so do memcpy
+            if (dst - src >= length && src - dst >= length)
+            {
+                memcpy(destination, source, length);
+                return;
+            }
+
+            if (dst < src)
+            {
+                /*
+                 * Copy forward.
+                 */
+                size_t t = (int)src; /* only need low bits */
+                if (((t | (int)dst) & wmask) != 0)
+                {
+                    /*
+			        * Try to align operands.  This cannot be done
+			        * unless the low bits match.
+			        */
+                    if (((t ^ (int)dst) & wmask) != 0 || length < wsize)
+                        t = length;
+                    else
+                        t = wsize - (t & wmask);
+                    length -= t;
+                    do
+                    {
+                        *dst++ = *src++;
+                    } while (--t != 0);
+                }
+                /*
+                 * Copy whole words, then mop up any trailing bytes.
+                 */
+                t = length / wsize;
+                if (t != 0)
+                {
+                    do
+                    {
+                        *(size_t*)dst = *(size_t*)src;
+                        src += wsize;
+                        dst += wsize;
+                    } while (--t != 0);
+                }
+                t = length & wmask;
+                if (t != 0)
+                {
+                    do
+                    {
+                        *dst++ = *src++;
+                    } while (--t != 0);
+                }
+            }
+            else
+            {
+                /*
+                 * Copy backwards.  Otherwise essentially the same.
+                 * Alignment works as before, except that it takes
+                 * (t&wmask) bytes to align, not wsize-(t&wmask).
+                 */
+                src += length;
+                dst += length;
+                size_t t = (int)src;
+                if (((t | (int)dst) & wmask) != 0)
+                {
+                    if (((t ^ (int)dst) & wmask) != 0 || length <= wsize)
+                        t = length;
+                    else
+                        t &= wmask;
+                    length -= t;
+                    do
+                    {
+                        *--dst = *--src;
+                    } while (--t != 0);
+                }
+                t = length / wsize;
+                if (t != 0)
+                {
+                    do
+                    {
+                        src -= wsize;
+                        dst -= wsize;
+                        *(size_t*)dst = *(size_t*)src;
+                    } while (t-- != 0);
+                }
+                t = length & wmask;
+                if (t != 0)
+                {
+                    do
+                    {
+                        *--dst = *--src;
+                    } while (--t != 0);
+                }
+            }
+        }
+
         // https://github.com/dotnet/coreclr/blob/master/src/mscorlib/src/System/Buffer.cs
         private static unsafe void memcpy(void* destination, void* source, size_t length) {
             // This is portable version of memcpy. It mirrors what the hand optimized assembly versions of memcpy typically do.
@@ -417,6 +520,22 @@ namespace BrotliSharpLib {
                 return s.Value;
             }
 
+            public static explicit operator float(size_t s) {
+                return Is64Bit ? (ulong)s : (uint)s;
+            }
+
+            public static explicit operator double(size_t s) {
+                return Is64Bit ? (ulong)s : (uint)s;
+            }
+
+            public static implicit operator size_t(ushort i) {
+                return new size_t((void*)i);
+            }
+
+            public static implicit operator size_t(byte i) {
+                return new size_t((void*)i);
+            }
+
             public static implicit operator size_t(int i) {
                 return new size_t((void*) i);
             }
@@ -435,6 +554,14 @@ namespace BrotliSharpLib {
 
             public static explicit operator size_t(void* p) {
                 return new size_t(p);
+            }
+
+            public static explicit operator size_t(double p) {
+                return new size_t(Is64Bit ? (void*) (ulong) p : (void*) (uint) p);
+            }
+
+            public static explicit operator size_t(float p) {
+                return new size_t(Is64Bit ? (void*)(ulong)p : (void*)(uint)p);
             }
 
 #if NET_45_OR_GREATER
@@ -460,6 +587,39 @@ namespace BrotliSharpLib {
 
             public static size_t operator +(size_t a, ulong b) {
                 return new size_t((byte*) a + b);
+            }
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public static bool operator >(size_t a, size_t b)
+            {
+                return Is64Bit ? (ulong)a > (ulong)b : (uint)a > (uint)b;
+            }
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public static bool operator >=(size_t a, size_t b)
+            {
+                return Is64Bit ? (ulong)a >= (ulong)b : (uint)a >= (uint)b;
+            }
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public static bool operator <=(size_t a, size_t b)
+            {
+                return Is64Bit ? (ulong)a <= (ulong)b : (uint)a <= (uint)b;
+            }
+
+
+#if NET_45_OR_GREATER
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public static bool operator <(size_t a, size_t b)
+            {
+                return Is64Bit ? (ulong)a < (ulong)b : (uint)a < (uint)b;
             }
 
 #if NET_45_OR_GREATER

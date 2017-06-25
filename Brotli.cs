@@ -73,6 +73,8 @@ namespace BrotliSharpLib {
                         BrotliEncoderSetCustomDictionary(ref s, customDictionary.Length, cd);
                 }
 
+                
+
                 return ms.ToArray();
             }
         }
