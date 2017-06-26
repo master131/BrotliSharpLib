@@ -198,7 +198,7 @@ namespace BrotliSharpLib
                         next_in = in_buf_ptr;
                     }
                     else if (_lastDecoderState == Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-                        break; /* Should not occur */
+                        /* Ignore */
                     }
                     else {
                         endOfStream = true;
