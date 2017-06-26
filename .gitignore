@@ -1,5 +1,4 @@
-BrotliSharpLib.DotSettings
-bin/
-obj/
+BrotliSharpLib/bin/
+BrotliSharpLib/obj/
 .vs/
 BrotliSharpLib.csproj.DotSettings

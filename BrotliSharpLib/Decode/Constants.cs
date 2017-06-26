@@ -24,6 +24,12 @@ namespace BrotliSharpLib {
                                                                    (BROTLI_REVERSE_BITS_MAX - 1 +
                                                                     BROTLI_REVERSE_BITS_BASE);
 
-        private static readonly int BROTLI_SHORT_FILL_BIT_WINDOW_READ = Marshal.SizeOf(typeof(reg_t)) >> 1;
+        private static readonly int BROTLI_SHORT_FILL_BIT_WINDOW_READ =
+#if SIZE_OF_T
+            Marshal.SizeOf<reg_t>()
+#else
+            Marshal.SizeOf(typeof(reg_t))
+#endif
+            >> 1;
     }
 }

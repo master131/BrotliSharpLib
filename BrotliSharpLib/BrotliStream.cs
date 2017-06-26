@@ -122,7 +122,7 @@ namespace BrotliSharpLib
             }
 
             if (disposing && !_leaveOpen && _stream != null) {
-                _stream.Close();
+                _stream.Dispose();
                 _stream = null;
             }
 

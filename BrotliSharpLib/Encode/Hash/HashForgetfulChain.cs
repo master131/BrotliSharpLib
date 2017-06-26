@@ -100,7 +100,11 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
+#if SIZE_OF_T
+                return Marshal.SizeOf<HashForgetfulChain>();
+#else
                 return Marshal.SizeOf(typeof(HashForgetfulChain));
+#endif
             }
 
             /* Look at 4 bytes at &data[ix & mask]. Compute a hash from these, and prepend
@@ -488,7 +492,11 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
+#if SIZE_OF_T
+                return Marshal.SizeOf<HashForgetfulChain>();
+#else
                 return Marshal.SizeOf(typeof(HashForgetfulChain));
+#endif
             }
 
             /* Look at 4 bytes at &data[ix & mask]. Compute a hash from these, and prepend
@@ -877,7 +885,11 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
+#if SIZE_OF_T
+                return Marshal.SizeOf<HashForgetfulChain>();
+#else
                 return Marshal.SizeOf(typeof(HashForgetfulChain));
+#endif
             }
 
             /* Look at 4 bytes at &data[ix & mask]. Compute a hash from these, and prepend

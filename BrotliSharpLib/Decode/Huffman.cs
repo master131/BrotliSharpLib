@@ -25,7 +25,7 @@ namespace BrotliSharpLib {
         /* Returns the table width of the next 2nd level table. count is the histogram
            of bit lengths for the remaining symbols, len is the code length of the next
            processed symbol */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe int NextTableBitSize(ushort* count,

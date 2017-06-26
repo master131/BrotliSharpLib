@@ -11,10 +11,18 @@ using BrotliBitReaderState = BrotliSharpLib.Brotli.BrotliBitReader;
 namespace BrotliSharpLib {
     public static partial class Brotli {
         private static unsafe T CreateStruct<T>() {
+#if SIZE_OF_T
+            var sz = Marshal.SizeOf<T>();
+#else
             var sz = Marshal.SizeOf(typeof(T));
+#endif
             var hMem = Marshal.AllocHGlobal(sz);
             memset(hMem.ToPointer(), 0, sz);
+#if SIZE_OF_T
+            var s = Marshal.PtrToStructure<T>(hMem);
+#else
             var s = Marshal.PtrToStructure(hMem, typeof(T));
+#endif
             Marshal.FreeHGlobal(hMem);
             return (T) s;
         }
@@ -424,7 +432,7 @@ namespace BrotliSharpLib {
             }
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static uint Log2Floor(uint x) {
@@ -577,7 +585,7 @@ namespace BrotliSharpLib {
             D) reduce the Huffman space
             E) update the histogram
          */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void ProcessSingleCodeLength(uint code_len,
@@ -917,7 +925,7 @@ namespace BrotliSharpLib {
            This method doesn't read data from the bit reader, BUT drops the amount of
            bits that correspond to the decoded symbol.
            bits MUST contain at least 15 (BROTLI_HUFFMAN_MAX_CODE_LENGTH) valid bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint DecodeSymbol(uint bits,
@@ -976,7 +984,7 @@ namespace BrotliSharpLib {
             return true;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool SafeReadSymbol(
@@ -991,7 +999,7 @@ namespace BrotliSharpLib {
 
         /* WARNING: if state is not BROTLI_STATE_READ_BLOCK_LENGTH_NONE, then
             reading can't be continued with ReadBlockLength. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool SafeReadBlockLength(
@@ -1227,7 +1235,7 @@ namespace BrotliSharpLib {
             }
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void DetectTrivialLiteralBlockTypes(
@@ -1278,7 +1286,7 @@ namespace BrotliSharpLib {
             return BrotliDecoderErrorCode.BROTLI_DECODER_SUCCESS;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void PrepareLiteralDecoding(ref BrotliDecoderState s) {
@@ -1315,7 +1323,7 @@ namespace BrotliSharpLib {
             return DecodeSymbol(BrotliGet16BitsUnmasked(br), table, br);
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         /* Decodes a block length by reading 3..39 bits. */
@@ -1330,7 +1338,7 @@ namespace BrotliSharpLib {
 
         /* Decodes a command or literal and updates block type ring-buffer.
            Reads 3..54 bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool DecodeBlockTypeAndLength(
@@ -1385,7 +1393,7 @@ namespace BrotliSharpLib {
 
         /* Block switch for insert/copy length.
            Reads 3..54 bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool DecodeCommandBlockSwitchInternal(
@@ -1418,7 +1426,7 @@ namespace BrotliSharpLib {
             }
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool ReadCommandInternal(
@@ -1473,7 +1481,7 @@ namespace BrotliSharpLib {
         }
 
         /* Makes a look-up in first level Huffman table. Peeks 8 bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void PreloadSymbol(int safe,
@@ -1513,7 +1521,7 @@ namespace BrotliSharpLib {
 
         /* Decodes the next Huffman code using data prepared by PreloadSymbol.
            Reads 0 - 15 bits. Also peeks 8 following bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint ReadPreloadedSymbol(HuffmanCode* table,
@@ -1560,7 +1568,7 @@ namespace BrotliSharpLib {
             return DecodeDistanceBlockSwitchInternal(1, ref s);
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void TakeDistanceFromRingBuffer(ref BrotliDecoderState s) {
@@ -1599,7 +1607,7 @@ namespace BrotliSharpLib {
         }
 
         /* Precondition: s->distance_code < 0 */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool ReadDistanceInternal(
@@ -1675,7 +1683,7 @@ namespace BrotliSharpLib {
             return ReadDistanceInternal(1, ref s, br);
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe BrotliDecoderErrorCode ProcessCommandsInternal(

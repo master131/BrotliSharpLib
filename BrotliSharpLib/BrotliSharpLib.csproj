@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net20;net35;net40;net45;net451;net452;net462;netstandard1.3;netstandard1.6;netcoreapp1.0;netcoreapp1.1</TargetFrameworks>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Version>0.1</Version>
+		<FileVersion>0.1</FileVersion>
+		<Authors>master131</Authors>
+		<Description>Full C# port of Brotli compression library.</Description>
+		<Copyright>Copyright (c) 2017 master131</Copyright>
+		<RepositoryUrl>https://github.com/master131/BrotliSharpLib</RepositoryUrl>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>brotli;csharp;net</PackageTags>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40'">
+		<DefineConstants>AGGRESSIVE_INLINING</DefineConstants>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40' AND '$(TargetFramework)'!='net45'">
+		<DefineConstants>SIZE_OF_T</DefineConstants>
+	</PropertyGroup>
+</Project>

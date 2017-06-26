@@ -37,7 +37,7 @@ namespace BrotliSharpLib {
             return true;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliBitReaderSaveState(
@@ -48,7 +48,7 @@ namespace BrotliSharpLib {
             to->avail_in = from->avail_in;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliBitReaderRestoreState(
@@ -59,7 +59,7 @@ namespace BrotliSharpLib {
             to->avail_in = from->avail_in;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint BrotliGetAvailableBits(BrotliBitReader* br) {
@@ -79,7 +79,7 @@ namespace BrotliSharpLib {
             return br->avail_in >= num;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe ushort BrotliLoad16LE(byte* bIn) {
@@ -93,7 +93,7 @@ namespace BrotliSharpLib {
             return (ushort)(bIn[0] | (bIn[1] << 8));
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint BrotliLoad32LE(byte* bIn) {
@@ -114,7 +114,7 @@ namespace BrotliSharpLib {
             }
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe ulong BrotliLoad64LE(byte* bIn) {
@@ -150,7 +150,7 @@ namespace BrotliSharpLib {
            Precondition: accumulator contains at least 1 bit.
            n_bits should be in the range [1..24] for regular build. For portable
            non-64-bit little-endian build only 16 bits are safe to request. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliFillBitWindow(
@@ -213,7 +213,7 @@ namespace BrotliSharpLib {
         }
 
         /* Pulls one byte of input to accumulator. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool BrotliPullByte(BrotliBitReader* br) {
@@ -235,7 +235,7 @@ namespace BrotliSharpLib {
 
         /* Returns currently available bits.
         The number of valid bits could be calculated by BrotliGetAvailableBits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe reg_t BrotliGetBitsUnmasked(BrotliBitReader* br) {
@@ -244,7 +244,7 @@ namespace BrotliSharpLib {
 
         /* Like BrotliGetBits, but does not mask the result.
         The result contains at least 16 valid bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint BrotliGet16BitsUnmasked(
@@ -262,7 +262,7 @@ namespace BrotliSharpLib {
 
         /* Tries to peek the specified amount of bits. Returns 0, if there is not
            enough input. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool BrotliSafeGetBits(
@@ -282,7 +282,7 @@ namespace BrotliSharpLib {
             br->bit_pos_ += n_bits;
         }
 
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliBitReaderUnload(BrotliBitReader* br) {
@@ -301,7 +301,7 @@ namespace BrotliSharpLib {
 
         /* Reads the specified number of bits from |br| and advances the bit pos.
            Precondition: accumulator MUST contain at least n_bits. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliTakeBits(
@@ -312,7 +312,7 @@ namespace BrotliSharpLib {
 
         /* Reads the specified number of bits from |br| and advances the bit pos.
         Assumes that there is enough input to perform BrotliFillBitWindow. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe uint BrotliReadBits(
@@ -349,7 +349,7 @@ namespace BrotliSharpLib {
 
         /* Advances the bit reader position to the next byte boundary and verifies
            that any skipped bits are set to zero. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe bool BrotliJumpToByteBoundary(BrotliBitReader* br) {
@@ -364,7 +364,7 @@ namespace BrotliSharpLib {
         /* Copies remaining input bytes stored in the bit reader to the output. Value
            num may not be larger than BrotliGetRemainingBytes. The bit reader must be
            warmed up again after this. */
-#if NET_45_OR_GREATER
+#if AGGRESSIVE_INLINING
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static unsafe void BrotliCopyBytes(byte* dest,
