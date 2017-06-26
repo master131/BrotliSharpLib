@@ -308,7 +308,7 @@ namespace BrotliSharpLib {
                     Math.Min(64 * num_clusters, (num_clusters / 2) * num_clusters);
                 if (pairs_capacity < max_num_pairs + 1) {
                     BrotliFree(ref m, pairs);
-                    pairs = (HistogramPair*) BrotliAllocate(ref m, max_num_pairs + 1 * sizeof(HistogramPair));
+                    pairs = (HistogramPair*) BrotliAllocate(ref m, (max_num_pairs + 1) * sizeof(HistogramPair));
                 }
 
                 clusters = (uint*) BrotliAllocate(ref m, num_clusters * sizeof(uint));
@@ -838,7 +838,7 @@ namespace BrotliSharpLib {
                 if (pairs_capacity < max_num_pairs + 1)
                 {
                     BrotliFree(ref m, pairs);
-                    pairs = (HistogramPair*)BrotliAllocate(ref m, max_num_pairs + 1 * sizeof(HistogramPair));
+                    pairs = (HistogramPair*)BrotliAllocate(ref m, (max_num_pairs + 1) * sizeof(HistogramPair));
                 }
 
                 clusters = (uint*)BrotliAllocate(ref m, num_clusters * sizeof(uint));
@@ -1385,7 +1385,7 @@ namespace BrotliSharpLib {
                 if (pairs_capacity < max_num_pairs + 1)
                 {
                     BrotliFree(ref m, pairs);
-                    pairs = (HistogramPair*)BrotliAllocate(ref m, max_num_pairs + 1 * sizeof(HistogramPair));
+                    pairs = (HistogramPair*)BrotliAllocate(ref m, (max_num_pairs + 1) * sizeof(HistogramPair));
                 }
 
                 clusters = (uint*)BrotliAllocate(ref m, num_clusters * sizeof(uint));

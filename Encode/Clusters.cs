@@ -250,7 +250,7 @@ namespace BrotliSharpLib {
                 size_t pairs_capacity = max_input_histograms * max_input_histograms / 2;
                 /* For the first pass of clustering, we allow all pairs. */
                 HistogramPair* pairs =
-                    (HistogramPair*) BrotliAllocate(ref m, pairs_capacity + 1 * sizeof(HistogramPair));
+                    (HistogramPair*) BrotliAllocate(ref m, (pairs_capacity + 1) * sizeof(HistogramPair));
                 size_t i;
                 for (i = 0; i < in_size; ++i) {
                     cluster_size[i] = 1;
@@ -605,7 +605,7 @@ namespace BrotliSharpLib {
                 size_t pairs_capacity = max_input_histograms * max_input_histograms / 2;
                 /* For the first pass of clustering, we allow all pairs. */
                 HistogramPair* pairs =
-                    (HistogramPair*)BrotliAllocate(ref m, pairs_capacity + 1 * sizeof(HistogramPair));
+                    (HistogramPair*)BrotliAllocate(ref m, (pairs_capacity + 1) * sizeof(HistogramPair));
                 size_t i;
                 for (i = 0; i < in_size; ++i)
                 {
@@ -965,7 +965,7 @@ namespace BrotliSharpLib {
                 size_t pairs_capacity = max_input_histograms * max_input_histograms / 2;
                 /* For the first pass of clustering, we allow all pairs. */
                 HistogramPair* pairs =
-                    (HistogramPair*)BrotliAllocate(ref m, pairs_capacity + 1 * sizeof(HistogramPair));
+                    (HistogramPair*)BrotliAllocate(ref m, (pairs_capacity + 1) * sizeof(HistogramPair));
                 size_t i;
                 for (i = 0; i < in_size; ++i)
                 {

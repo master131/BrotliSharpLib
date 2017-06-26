@@ -85,11 +85,13 @@ namespace BrotliSharpLib
         /* Maintains the smallest 8 cost difference together with their positions */
         [StructLayout(LayoutKind.Sequential)]
         private unsafe struct StartPosQueue {
-            private fixed long q_internal[8 * 3];
+            private fixed long q_internal[8 * 4];
             public size_t idx_;
 
-            public PosData* q_ {
-                get {
+            public PosData* q_
+            {
+                get
+                {
                     fixed (long* q = q_internal)
                         return (PosData*)q;
                 }
@@ -150,7 +152,7 @@ namespace BrotliSharpLib
             ref MemoryManager m, ZopfliCostModel* self, size_t num_bytes)
         {
             self->num_bytes_ = num_bytes;
-            self->literal_costs_ = (float*) BrotliAllocate(ref m, num_bytes + 2 * sizeof(float));
+            self->literal_costs_ = (float*) BrotliAllocate(ref m, (num_bytes + 2) * sizeof(float));
         }
 
         private static unsafe void ZopfliCostModelSetFromLiteralCosts(ZopfliCostModel* self,
@@ -654,7 +656,7 @@ namespace BrotliSharpLib
         {
             size_t max_backward_limit = BROTLI_MAX_BACKWARD_LIMIT(params_->lgwin);
             ZopfliNode* nodes;
-            nodes = (ZopfliNode*) BrotliAllocate(ref m, num_bytes + 1 * sizeof(ZopfliNode));
+            nodes = (ZopfliNode*) BrotliAllocate(ref m, (num_bytes + 1) * sizeof(ZopfliNode));
             BrotliInitZopfliNodes(nodes, num_bytes + 1);
             *num_commands += BrotliZopfliComputeShortestPath(ref m, num_bytes,
                 position, ringbuffer, ringbuffer_mask, params_, max_backward_limit,
@@ -872,7 +874,7 @@ namespace BrotliSharpLib
             orig_last_insert_len = *last_insert_len;
             memcpy(orig_dist_cache, dist_cache, 4 * sizeof(int));
             orig_num_commands = *num_commands;
-            nodes = (ZopfliNode*) BrotliAllocate(ref m, num_bytes + 1 * sizeof(ZopfliNode));
+            nodes = (ZopfliNode*) BrotliAllocate(ref m, (num_bytes + 1) * sizeof(ZopfliNode));
             InitZopfliCostModel(ref m, &model, num_bytes);
             for (i = 0; i < 2; i++)
             {

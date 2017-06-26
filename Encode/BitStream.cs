@@ -369,6 +369,59 @@ namespace BrotliSharpLib {
             BrotliFree(ref m, rle_symbols);
         }
 
+        /* Stores the next symbol with the entropy code of the current block type.
+           Updates the block type and block length at block boundaries. */
+        private static unsafe void StoreSymbol(BlockEncoder* self, size_t symbol, size_t* storage_ix,
+            byte* storage)
+        {
+            if (self->block_len_ == 0)
+            {
+                size_t block_ix = ++self->block_ix_;
+                uint block_len = self->block_lengths_[block_ix];
+                byte block_type = self->block_types_[block_ix];
+                self->block_len_ = block_len;
+                self->entropy_ix_ = block_type * self->alphabet_size_;
+                StoreBlockSwitch(&self->block_split_code_, block_len, block_type, false,
+                    storage_ix, storage);
+            }
+            --self->block_len_;
+            {
+                size_t ix = self->entropy_ix_ + symbol;
+                BrotliWriteBits(self->depths_[ix], self->bits_[ix], storage_ix, storage);
+            }
+        }
+
+        /* Stores the next symbol with the entropy code of the current block type and
+           context value.
+           Updates the block type and block length at block boundaries. */
+        private static unsafe void StoreSymbolWithContext(BlockEncoder* self, size_t symbol,
+            size_t context, uint* context_map, size_t* storage_ix,
+            byte* storage, size_t context_bits)
+        {
+            if (self->block_len_ == 0)
+            {
+                size_t block_ix = ++self->block_ix_;
+                uint block_len = self->block_lengths_[block_ix];
+                byte block_type = self->block_types_[block_ix];
+                self->block_len_ = block_len;
+                self->entropy_ix_ = (size_t)block_type << (int) context_bits;
+                StoreBlockSwitch(&self->block_split_code_, block_len, block_type, false,
+                    storage_ix, storage);
+            }
+            --self->block_len_;
+            {
+                size_t histo_ix = context_map[self->entropy_ix_ + context];
+                size_t ix = histo_ix * self->alphabet_size_ + symbol;
+                BrotliWriteBits(self->depths_[ix], self->bits_[ix], storage_ix, storage);
+            }
+        }
+
+        private static unsafe void CleanupBlockEncoder(ref MemoryManager m, BlockEncoder* self)
+        {
+            BrotliFree(ref m, self->depths_);
+            BrotliFree(ref m, self->bits_);
+        }
+
         private static unsafe void BrotliStoreMetaBlock(ref MemoryManager m,
             byte* input,
             size_t start_pos,
@@ -440,14 +493,14 @@ namespace BrotliSharpLib {
                     mb->distance_context_map, mb->distance_context_map_size,
                     mb->distance_histograms_size, tree, storage_ix, storage);
             }
-
-            BuildAndStoreEntropyCodesLiteral(m, &literal_enc, mb->literal_histograms,
+            
+            BlockEncoderLiteral.BuildAndStoreEntropyCodes(ref m, &literal_enc, mb->literal_histograms,
                 mb->literal_histograms_size, tree, storage_ix, storage);
 
-            BuildAndStoreEntropyCodesCommand(m, &command_enc, mb->command_histograms,
+            BlockEncoderCommand.BuildAndStoreEntropyCodes(ref m, &command_enc, mb->command_histograms,
                 mb->command_histograms_size, tree, storage_ix, storage);
 
-            BuildAndStoreEntropyCodesDistance(m, &distance_enc, mb->distance_histograms,
+            BlockEncoderDistance.BuildAndStoreEntropyCodes(ref m, &distance_enc, mb->distance_histograms,
                 mb->distance_histograms_size, tree, storage_ix, storage);
 
             BrotliFree(ref m, tree);
@@ -478,7 +531,7 @@ namespace BrotliSharpLib {
                     }
                 }
                 pos += CommandCopyLen(&cmd);
-                if (CommandCopyLen(&cmd)) {
+                if (CommandCopyLen(&cmd) != 0) {
                     prev_byte2 = input[(pos - 2) & mask];
                     prev_byte = input[(pos - 1) & mask];
                     if (cmd.cmd_prefix_ >= 128) {
@@ -498,9 +551,9 @@ namespace BrotliSharpLib {
                     }
                 }
             }
-            CleanupBlockEncoder(m, &distance_enc);
-            CleanupBlockEncoder(m, &command_enc);
-            CleanupBlockEncoder(m, &literal_enc);
+            CleanupBlockEncoder(ref m, &distance_enc);
+            CleanupBlockEncoder(ref m, &command_enc);
+            CleanupBlockEncoder(ref m, &literal_enc);
             if (is_last) {
                 JumpToByteBoundary(storage_ix, storage);
             }

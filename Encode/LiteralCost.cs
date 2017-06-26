@@ -60,9 +60,7 @@ namespace BrotliSharpLib
             /* max_utf8 is 0 (normal ASCII single byte modeling),
                1 (for 2-byte UTF-8 modeling), or 2 (for 3-byte UTF-8 modeling). */
             size_t max_utf8 = DecideMultiByteStatsLevel(pos, len, mask, data);
-            size_t* histogram_temp = stackalloc size_t[3 * 256];
-            memset(histogram_temp, 0, 3 * 256 * sizeof(size_t));
-            size_t** histogram = (size_t**) histogram_temp;
+            size_t[,] histogram = new size_t[3, 256];
             //size_t histogram[3][256] = { { 0 } };
             size_t window_half = 495;
             size_t in_window = Math.Min(window_half, len);
@@ -75,7 +73,7 @@ namespace BrotliSharpLib
                 size_t utf8_pos = 0;
                 for (i = 0; i<in_window; ++i) {
                     size_t c = data[(pos + i) & mask];
-                    ++histogram[utf8_pos][c];
+                    ++histogram[utf8_pos, c];
                     ++in_window_utf8[utf8_pos];
                     utf8_pos = UTF8Position(last_c, c, max_utf8);
                     last_c = c;
@@ -91,7 +89,7 @@ namespace BrotliSharpLib
                     size_t last_c =
                         i < window_half + 2 ? 0 : data[(pos + i - window_half - 2) & mask];
                     size_t utf8_pos2 = UTF8Position(last_c, c, max_utf8);
-                    --histogram[utf8_pos2][data[(pos + i - window_half) & mask]];
+                    --histogram[utf8_pos2, data[(pos + i - window_half) & mask]];
                     --in_window_utf8[utf8_pos2];
                 }
                 if (i + window_half<len) {
@@ -99,7 +97,7 @@ namespace BrotliSharpLib
                     size_t c = data[(pos + i + window_half - 1) & mask];
                     size_t last_c = data[(pos + i + window_half - 2) & mask];
                     size_t utf8_pos2 = UTF8Position(last_c, c, max_utf8);
-                    ++histogram[utf8_pos2][data[(pos + i + window_half) & mask]];
+                    ++histogram[utf8_pos2, data[(pos + i + window_half) & mask]];
                     ++in_window_utf8[utf8_pos2];
                 }
                 {
@@ -107,7 +105,7 @@ namespace BrotliSharpLib
                     size_t last_c = i < 2 ? 0 : data[(pos + i - 2) & mask];
                     size_t utf8_pos = UTF8Position(last_c, c, max_utf8);
                     size_t masked_pos = (pos + i) & mask;
-                    size_t histo = histogram[utf8_pos][data[masked_pos]];
+                    size_t histo = histogram[utf8_pos, data[masked_pos]];
                     double lit_cost;
                     if (histo == 0) {
                         histo = 1;

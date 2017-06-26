@@ -507,6 +507,19 @@ namespace BrotliSharpLib {
             }
         }
 
+        private static unsafe void DestroyMetaBlockSplit(
+            ref MemoryManager m, MetaBlockSplit* mb)
+        {
+            BrotliDestroyBlockSplit(ref m, &mb->literal_split);
+            BrotliDestroyBlockSplit(ref m, &mb->command_split);
+            BrotliDestroyBlockSplit(ref m, &mb->distance_split);
+            BrotliFree(ref m, mb->literal_context_map);
+            BrotliFree(ref m, mb->distance_context_map);
+            BrotliFree(ref m, mb->literal_histograms);
+            BrotliFree(ref m, mb->command_histograms);
+            BrotliFree(ref m, mb->distance_histograms);
+        }
+
         private static unsafe void BrotliOptimizeHistograms(size_t num_direct_distance_codes,
             size_t distance_postfix_bits,
             MetaBlockSplit* mb)

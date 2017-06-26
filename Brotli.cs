@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -73,7 +74,39 @@ namespace BrotliSharpLib {
                         BrotliEncoderSetCustomDictionary(ref s, customDictionary.Length, cd);
                 }
 
-                
+                size_t available_in = length;
+                byte[] out_buf = new byte[0x10000];
+                size_t available_out = out_buf.Length;
+                fixed (byte* o = out_buf)
+                fixed (byte* b = buffer) {
+                    byte* next_in = b;
+                    byte* next_out = o;
+
+                    bool fail = false;
+
+                    while (true) {
+                        // Compress stream using inputted buffer
+                        if (!BrotliEncoderCompressStream(ref s, BrotliEncoderOperation.BROTLI_OPERATION_FINISH,
+                            &available_in, &next_in, &available_out, &next_out, null)) {
+                            fail = true;
+                            break;
+                        }
+
+                        // Write the compressed bytes to the stream
+                        if (available_out != out_buf.Length) {
+                            size_t out_size = out_buf.Length - available_out;
+                            ms.Write(out_buf, 0, (int) out_size);
+                            available_out = out_buf.Length;
+                            next_out = o;
+                        }
+
+                        // Check that the encoder is finished
+                        if (BrotliEncoderIsFinished(ref s)) break;
+                    }
+
+                    if (fail)
+                        throw new InvalidDataException("Compression failed for unspecified reason");
+                }
 
                 return ms.ToArray();
             }

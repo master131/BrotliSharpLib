@@ -79,6 +79,12 @@ namespace BrotliSharpLib
             return *seed;
         }
 
+        private static unsafe void BrotliDestroyBlockSplit(ref MemoryManager m, BlockSplit* self)
+        {
+            BrotliFree(ref m, self->types);
+            BrotliFree(ref m, self->lengths);
+        }
+
         private static double BitCost(size_t count)
         {
             return count == 0 ? -2.0 : FastLog2(count);
