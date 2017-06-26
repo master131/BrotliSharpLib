@@ -2,12 +2,12 @@
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
-        private const int BROTLI_MIN_WINDOW_BITS = 10;
-        private const int BROTLI_MAX_WINDOW_BITS = 24;
+        internal const int BROTLI_MIN_WINDOW_BITS = 10;
+        internal const int BROTLI_MAX_WINDOW_BITS = 24;
         private const int BROTLI_MIN_INPUT_BLOCK_BITS = 16;
         private const int BROTLI_MAX_INPUT_BLOCK_BITS = 24;
-        private const int BROTLI_MIN_QUALITY = 0;
-        private const int BROTLI_MAX_QUALITY = 11;
+        internal const int BROTLI_MIN_QUALITY = 0;
+        internal const int BROTLI_MAX_QUALITY = 11;
 
         private const int FAST_ONE_PASS_COMPRESSION_QUALITY = 0;
         private const int FAST_TWO_PASS_COMPRESSION_QUALITY = 1;

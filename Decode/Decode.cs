@@ -27,7 +27,7 @@ namespace BrotliSharpLib {
             Marshal.FreeHGlobal((IntPtr) address);
         }
 
-        private static BrotliDecoderState BrotliCreateDecoderState() {
+        internal static BrotliDecoderState BrotliCreateDecoderState() {
             return CreateStruct<BrotliDecoderState>();
         }
 
@@ -1851,9 +1851,29 @@ namespace BrotliSharpLib {
                     else {
                         /* Read distance code in the command, unless it was implicitly zero. */
                         if (bl[2] == 0) {
-                            DecodeDistanceBlockSwitch(ref s);
+                            if (safe != 0)
+                            {
+                                if (!SafeDecodeDistanceBlockSwitch(ref s))
+                                {
+                                    result = BrotliDecoderErrorCode.BROTLI_DECODER_NEEDS_MORE_INPUT;
+                                    goto saveStateAndReturn;
+                                }
+                            }
+                            else
+                            {
+                                DecodeDistanceBlockSwitch(ref s);
+                            }
+                            
                         }
-                        ReadDistance(ref s, br);
+                        if (safe != 0) {
+                            if (!SafeReadDistance(ref s, br)) {
+                                result = BrotliDecoderErrorCode.BROTLI_DECODER_NEEDS_MORE_INPUT;
+                                goto saveStateAndReturn;
+                            }
+                        }
+                        else {
+                            ReadDistance(ref s, br);
+                        }
                     }
                     if (s.max_distance != s.max_backward_distance) {
                         s.max_distance =
@@ -1997,7 +2017,7 @@ namespace BrotliSharpLib {
             group->htrees = null;
         }
 
-        private static unsafe BrotliDecoderResult BrotliDecoderDecompressStream(
+        internal static unsafe BrotliDecoderResult BrotliDecoderDecompressStream(
             ref BrotliDecoderState s, size_t* available_in, byte** next_in,
             size_t* available_out, byte** next_out, size_t* total_out) {
             var result = BrotliDecoderErrorCode.BROTLI_DECODER_SUCCESS;

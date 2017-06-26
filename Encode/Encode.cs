@@ -4,7 +4,7 @@ using BrotliEncoderState = BrotliSharpLib.Brotli.BrotliEncoderStateStruct;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
-        private static unsafe BrotliEncoderState BrotliEncoderCreateInstance(brotli_alloc_func alloc_func,
+        internal static unsafe BrotliEncoderState BrotliEncoderCreateInstance(brotli_alloc_func alloc_func,
             brotli_free_func free_func, void* opaque) {
             BrotliEncoderState state = CreateStruct<BrotliEncoderState>();
             BrotliInitMemoryManager(
@@ -20,6 +20,23 @@ namespace BrotliSharpLib {
             params_.lgblock = 0;
             params_.size_hint = 0;
             params_.disable_literal_context_modeling = false;
+        }
+
+        private static unsafe void BrotliEncoderCleanupState(ref BrotliEncoderState s) {
+            BrotliFree(ref s.memory_manager_, s.storage_);
+            BrotliFree(ref s.memory_manager_, s.commands_);
+            fixed (RingBuffer* rb = &s.ringbuffer_)
+                RingBufferFree(ref s.memory_manager_, rb);
+            fixed (HasherHandle* h = &s.hasher_)
+                DestroyHasher(ref s.memory_manager_, h);
+            BrotliFree(ref s.memory_manager_, s.large_table_);
+            BrotliFree(ref s.memory_manager_, s.command_buf_);
+            BrotliFree(ref s.memory_manager_, s.literal_buf_);
+        }
+
+        /* Deinitializes and frees BrotliEncoderState instance. */
+        internal static unsafe void BrotliEncoderDestroyInstance(ref BrotliEncoderState state) {
+            BrotliEncoderCleanupState(ref state);
         }
 
         private static unsafe void BrotliEncoderInitState(ref BrotliEncoderState s) {
@@ -65,7 +82,7 @@ namespace BrotliSharpLib {
             }
         }
 
-        private static bool BrotliEncoderSetParameter(
+        internal static bool BrotliEncoderSetParameter(
             ref BrotliEncoderState state, BrotliEncoderParameter p, uint value) {
             /* Changing parameters on the fly is not implemented yet. */
             if (state.is_initialized_) return false;
@@ -415,15 +432,12 @@ namespace BrotliSharpLib {
         private static unsafe bool ShouldUseComplexStaticContextMap(byte* input,
             size_t start_pos, size_t length, size_t mask, int quality,
             size_t size_hint, ContextType* literal_context_mode,
-            size_t* num_literal_contexts, uint** literal_context_map)
-        {
+            size_t* num_literal_contexts, uint** literal_context_map) {
             /* Try the more complex private static unsafe context map only for long data. */
-            if (size_hint < (1 << 20))
-            {
+            if (size_hint < (1 << 20)) {
                 return false;
             }
-            else
-            {
+            else {
                 size_t end_pos = start_pos + length;
                 /* To make entropy calculations faster and to fit on the stack, we collect
                    histograms over the 5 most significant bits of literals. One histogram
@@ -444,9 +458,9 @@ namespace BrotliSharpLib {
                     size_t pos;
                     /* To make the analysis of the data faster we only examine 64 byte long
                        strides at every 4kB intervals. */
-                    for (pos = start_pos + 2; pos<stride_end_pos; ++pos) {
+                    for (pos = start_pos + 2; pos < stride_end_pos; ++pos) {
                         byte literal = input[pos & mask];
-                        byte context = (byte)kStaticContextMapComplexUTF8[
+                        byte context = (byte) kStaticContextMapComplexUTF8[
                             Context(prev1, prev2, ContextType.CONTEXT_UTF8)];
                         ++total;
                         ++combined_histo[literal >> 3];
@@ -457,10 +471,10 @@ namespace BrotliSharpLib {
                 }
                 entropy[1] = ShannonEntropy(combined_histo, 32, &dummy);
                 entropy[2] = 0;
-                for (i = 0; i< 13; ++i) {
+                for (i = 0; i < 13; ++i) {
                     entropy[2] += ShannonEntropy(&context_histo[i][0], 32, &dummy);
                 }
-                entropy[0] = 1.0 / (double)total;
+                entropy[0] = 1.0 / (double) total;
                 entropy[1] *= entropy[0];
                 entropy[2] *= entropy[0];
                 /* The triggering heuristics below were tuned by compressing the individual
@@ -472,11 +486,12 @@ namespace BrotliSharpLib {
                    for some cases and could be tuned further. */
                 if (entropy[2] > 3.0 || entropy[1] - entropy[2] < 0.2) {
                     return false;
-                } else {
-                    * literal_context_mode = ContextType.CONTEXT_UTF8;
-                    * num_literal_contexts = 13;
+                }
+                else {
+                    *literal_context_mode = ContextType.CONTEXT_UTF8;
+                    *num_literal_contexts = 13;
                     fixed (uint* context_map = kStaticContextMapComplexUTF8)
-                        * literal_context_map = context_map;
+                        *literal_context_map = context_map;
                     return true;
                 }
             }
@@ -512,8 +527,7 @@ namespace BrotliSharpLib {
         private static unsafe void ChooseContextMap(int quality,
             uint* bigram_histo,
             size_t* num_literal_contexts,
-            uint** literal_context_map)
-        {
+            uint** literal_context_map) {
             uint* monogram_histo = stackalloc uint[3];
             memset(monogram_histo, 0, 3 * sizeof(uint));
             uint* two_prefix_histo = stackalloc uint[6];
@@ -522,8 +536,7 @@ namespace BrotliSharpLib {
             size_t i;
             size_t dummy;
             double* entropy = stackalloc double[4];
-            for (i = 0; i < 9; ++i)
-            {
+            for (i = 0; i < 9; ++i) {
                 monogram_histo[i % 3] += bigram_histo[i];
                 two_prefix_histo[i % 6] += bigram_histo[i];
             }
@@ -531,37 +544,32 @@ namespace BrotliSharpLib {
             entropy[2] = (ShannonEntropy(two_prefix_histo, 3, &dummy) +
                           ShannonEntropy(two_prefix_histo + 3, 3, &dummy));
             entropy[3] = 0;
-            for (i = 0; i < 3; ++i)
-            {
+            for (i = 0; i < 3; ++i) {
                 entropy[3] += ShannonEntropy(bigram_histo + 3 * i, 3, &dummy);
             }
 
             total = monogram_histo[0] + monogram_histo[1] + monogram_histo[2];
-            entropy[0] = 1.0 / (double)total;
+            entropy[0] = 1.0 / (double) total;
             entropy[1] *= entropy[0];
             entropy[2] *= entropy[0];
             entropy[3] *= entropy[0];
 
-            if (quality < MIN_QUALITY_FOR_HQ_CONTEXT_MODELING)
-            {
+            if (quality < MIN_QUALITY_FOR_HQ_CONTEXT_MODELING) {
                 /* 3 context models is a bit slower, don't use it at lower qualities. */
                 entropy[3] = entropy[1] * 10;
             }
             /* If expected savings by symbol are less than 0.2 bits, skip the
                context modeling -- in exchange for faster decoding speed. */
             if (entropy[1] - entropy[2] < 0.2 &&
-                entropy[1] - entropy[3] < 0.2)
-            {
+                entropy[1] - entropy[3] < 0.2) {
                 *num_literal_contexts = 1;
             }
-            else if (entropy[2] - entropy[3] < 0.02)
-            {
+            else if (entropy[2] - entropy[3] < 0.02) {
                 *num_literal_contexts = 2;
                 fixed (uint* context_map = kStaticContextMapSimpleUTF8)
                     *literal_context_map = context_map;
             }
-            else
-            {
+            else {
                 *num_literal_contexts = 3;
                 fixed (uint* context_map = kStaticContextMapContinuation)
                     *literal_context_map = context_map;
@@ -938,8 +946,7 @@ namespace BrotliSharpLib {
            REQUIRED: |header| should be 8-byte aligned and at least 16 bytes long.
            REQUIRED: |block_size| <= (1 << 24). */
         private static unsafe size_t WriteMetadataHeader(
-            ref BrotliEncoderState s, size_t block_size, byte* header)
-        {
+            ref BrotliEncoderState s, size_t block_size, byte* header) {
             size_t storage_ix;
             storage_ix = s.last_byte_bits_;
             header[0] = s.last_byte_;
@@ -949,14 +956,11 @@ namespace BrotliSharpLib {
             BrotliWriteBits(1, 0, &storage_ix, header);
             BrotliWriteBits(2, 3, &storage_ix, header);
             BrotliWriteBits(1, 0, &storage_ix, header);
-            if (block_size == 0)
-            {
+            if (block_size == 0) {
                 BrotliWriteBits(2, 0, &storage_ix, header);
             }
-            else
-            {
-                uint nbits = (block_size == 1) ? 0 :
-                    (Log2FloorNonZero((uint)block_size - 1) + 1);
+            else {
+                uint nbits = (block_size == 1) ? 0 : (Log2FloorNonZero((uint) block_size - 1) + 1);
                 uint nbytes = (nbits + 7) / 8;
                 BrotliWriteBits(2, nbytes, &storage_ix, header);
                 BrotliWriteBits(8 * nbytes, block_size - 1, &storage_ix, header);
@@ -1040,19 +1044,16 @@ namespace BrotliSharpLib {
             return true;
         }
 
-        private static unsafe size_t RemainingInputBlockSize(ref BrotliEncoderState s)
-        {
+        private static unsafe size_t RemainingInputBlockSize(ref BrotliEncoderState s) {
             ulong delta = UnprocessedInputSize(ref s);
             size_t block_size = InputBlockSize(ref s);
             if (delta >= block_size) return 0;
-            return block_size - (size_t)delta;
+            return block_size - (size_t) delta;
         }
 
-        private static unsafe void CheckFlushComplete(ref BrotliEncoderState s)
-        {
+        private static unsafe void CheckFlushComplete(ref BrotliEncoderState s) {
             if (s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_FLUSH_REQUESTED &&
-                s.available_out_ == 0)
-            {
+                s.available_out_ == 0) {
                 s.stream_state_ = BrotliEncoderStreamState.BROTLI_STREAM_PROCESSING;
                 s.next_out_ = null;
             }
@@ -1061,9 +1062,8 @@ namespace BrotliSharpLib {
         private static unsafe bool BrotliEncoderCompressStreamFast(
             ref BrotliEncoderState s, BrotliEncoderOperation op, size_t* available_in,
             byte** next_in, size_t* available_out, byte** next_out,
-            size_t* total_out)
-        {
-            size_t block_size_limit = (size_t)1 << s.params_.lgwin;
+            size_t* total_out) {
+            size_t block_size_limit = (size_t) 1 << s.params_.lgwin;
             size_t buf_size = Math.Min(kCompressFragmentTwoPassBlockSize,
                 Math.Min(*available_in, block_size_limit));
             uint* tmp_command_buf = null;
@@ -1071,37 +1071,30 @@ namespace BrotliSharpLib {
             byte* tmp_literal_buf = null;
             byte* literal_buf = null;
             if (s.params_.quality != FAST_ONE_PASS_COMPRESSION_QUALITY &&
-                s.params_.quality != FAST_TWO_PASS_COMPRESSION_QUALITY)
-            {
+                s.params_.quality != FAST_TWO_PASS_COMPRESSION_QUALITY) {
                 return false;
             }
-            if (s.params_.quality == FAST_TWO_PASS_COMPRESSION_QUALITY)
-            {
-                if (s.command_buf_ == null && buf_size == kCompressFragmentTwoPassBlockSize)
-                {
+            if (s.params_.quality == FAST_TWO_PASS_COMPRESSION_QUALITY) {
+                if (s.command_buf_ == null && buf_size == kCompressFragmentTwoPassBlockSize) {
                     s.command_buf_ =
-                        (uint*)BrotliAllocate(ref s.memory_manager_, kCompressFragmentTwoPassBlockSize * sizeof(uint));
+                        (uint*) BrotliAllocate(ref s.memory_manager_, kCompressFragmentTwoPassBlockSize * sizeof(uint));
                     s.literal_buf_ =
-                        (byte*)BrotliAllocate(ref s.memory_manager_, kCompressFragmentTwoPassBlockSize * sizeof(byte));
+                        (byte*) BrotliAllocate(ref s.memory_manager_, kCompressFragmentTwoPassBlockSize * sizeof(byte));
                 }
-                if (s.command_buf_ != null)
-                {
+                if (s.command_buf_ != null) {
                     command_buf = s.command_buf_;
                     literal_buf = s.literal_buf_;
                 }
-                else
-                {
-                    tmp_command_buf = (uint*)BrotliAllocate(ref s.memory_manager_, buf_size * sizeof(uint));
-                    tmp_literal_buf = (byte*)BrotliAllocate(ref s.memory_manager_, buf_size * sizeof(byte));
+                else {
+                    tmp_command_buf = (uint*) BrotliAllocate(ref s.memory_manager_, buf_size * sizeof(uint));
+                    tmp_literal_buf = (byte*) BrotliAllocate(ref s.memory_manager_, buf_size * sizeof(byte));
                     command_buf = tmp_command_buf;
                     literal_buf = tmp_literal_buf;
                 }
             }
 
-            while (true)
-            {
-                if (InjectFlushOrPushOutput(ref s, available_out, next_out, total_out))
-                {
+            while (true) {
+                if (InjectFlushOrPushOutput(ref s, available_out, next_out, total_out)) {
                     continue;
                 }
 
@@ -1110,8 +1103,7 @@ namespace BrotliSharpLib {
                    additional input or pending operation. */
                 if (s.available_out_ == 0 &&
                     s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_PROCESSING &&
-                    (*available_in != 0 || op != BrotliEncoderOperation.BROTLI_OPERATION_PROCESS))
-                {
+                    (*available_in != 0 || op != BrotliEncoderOperation.BROTLI_OPERATION_PROCESS)) {
                     size_t block_size = Math.Min(block_size_limit, *available_in);
                     bool is_last =
                         (*available_in == block_size) && (op == BrotliEncoderOperation.BROTLI_OPERATION_FINISH);
@@ -1124,25 +1116,21 @@ namespace BrotliSharpLib {
                     size_t table_size;
                     int* table;
 
-                    if (force_flush && block_size == 0)
-                    {
+                    if (force_flush && block_size == 0) {
                         s.stream_state_ = BrotliEncoderStreamState.BROTLI_STREAM_FLUSH_REQUESTED;
                         continue;
                     }
-                    if (max_out_size <= *available_out)
-                    {
+                    if (max_out_size <= *available_out) {
                         storage = *next_out;
                     }
-                    else
-                    {
+                    else {
                         inplace = false;
                         storage = GetBrotliStorage(ref s, max_out_size);
                     }
                     storage[0] = s.last_byte_;
                     table = GetHashTable(ref s, s.params_.quality, block_size, &table_size);
 
-                    if (s.params_.quality == FAST_ONE_PASS_COMPRESSION_QUALITY)
-                    {
+                    if (s.params_.quality == FAST_ONE_PASS_COMPRESSION_QUALITY) {
                         fixed (byte* cmd_depths_ = s.cmd_depths_)
                         fixed (ushort* cmd_bits_ = s.cmd_bits_)
                         fixed (size_t* cmd_code_numbits_ = &s.cmd_code_numbits_)
@@ -1151,24 +1139,21 @@ namespace BrotliSharpLib {
                                 table_size, cmd_depths_, cmd_bits_, cmd_code_numbits_,
                                 cmd_code_, &storage_ix, storage);
                     }
-                    else
-                    {
+                    else {
                         BrotliCompressFragmentTwoPass(ref s.memory_manager_, *next_in, block_size, is_last,
                             command_buf, literal_buf, table, table_size,
                             &storage_ix, storage);
                     }
                     *next_in += block_size;
                     *available_in -= block_size;
-                    if (inplace)
-                    {
+                    if (inplace) {
                         size_t out_bytes = storage_ix >> 3;
                         *next_out += out_bytes;
                         *available_out -= out_bytes;
                         s.total_out_ += out_bytes;
                         if (total_out != null) *total_out = s.total_out_;
                     }
-                    else
-                    {
+                    else {
                         size_t out_bytes = storage_ix >> 3;
                         s.next_out_ = storage;
                         s.available_out_ = out_bytes;
@@ -1216,17 +1201,14 @@ namespace BrotliSharpLib {
             }
 
             if (s.params_.quality == FAST_ONE_PASS_COMPRESSION_QUALITY ||
-                s.params_.quality == FAST_TWO_PASS_COMPRESSION_QUALITY)
-            {
+                s.params_.quality == FAST_TWO_PASS_COMPRESSION_QUALITY) {
                 return BrotliEncoderCompressStreamFast(ref s, op, available_in, next_in,
                     available_out, next_out, total_out);
             }
-            while (true)
-            {
+            while (true) {
                 size_t remaining_block_size = RemainingInputBlockSize(ref s);
 
-                if (remaining_block_size != 0 && *available_in != 0)
-                {
+                if (remaining_block_size != 0 && *available_in != 0) {
                     size_t copy_input_size =
                         Math.Min(remaining_block_size, *available_in);
                     CopyInputToRingBuffer(ref s, copy_input_size, *next_in);
@@ -1235,18 +1217,15 @@ namespace BrotliSharpLib {
                     continue;
                 }
 
-                if (InjectFlushOrPushOutput(ref s, available_out, next_out, total_out))
-                {
+                if (InjectFlushOrPushOutput(ref s, available_out, next_out, total_out)) {
                     continue;
                 }
 
                 /* Compress data only when internal output buffer is empty, stream is not
                    finished and there is no pending flush request. */
                 if (s.available_out_ == 0 &&
-                    s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_PROCESSING)
-                {
-                    if (remaining_block_size == 0 || op != BrotliEncoderOperation.BROTLI_OPERATION_PROCESS)
-                    {
+                    s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_PROCESSING) {
+                    if (remaining_block_size == 0 || op != BrotliEncoderOperation.BROTLI_OPERATION_PROCESS) {
                         bool is_last = (
                             (*available_in == 0) && op == BrotliEncoderOperation.BROTLI_OPERATION_FINISH);
                         bool force_flush = (
@@ -1269,14 +1248,12 @@ namespace BrotliSharpLib {
             return true;
         }
 
-        private static bool BrotliEncoderIsFinished(ref BrotliEncoderState s)
-        {
+        private static bool BrotliEncoderIsFinished(ref BrotliEncoderState s) {
             return (s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_FINISHED &&
                     !BrotliEncoderHasMoreOutput(ref s));
         }
 
-        private static bool BrotliEncoderHasMoreOutput(ref BrotliEncoderState s)
-        {
+        private static bool BrotliEncoderHasMoreOutput(ref BrotliEncoderState s) {
             return (s.available_out_ != 0);
         }
 

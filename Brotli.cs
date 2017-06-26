@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -103,6 +102,8 @@ namespace BrotliSharpLib {
                         // Check that the encoder is finished
                         if (BrotliEncoderIsFinished(ref s)) break;
                     }
+
+                    BrotliEncoderDestroyInstance(ref s);
 
                     if (fail)
                         throw new InvalidDataException("Compression failed for unspecified reason");

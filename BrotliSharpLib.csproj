@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrotliStream.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Decode\BitReader.cs" />
     <Compile Include="Brotli.cs" />

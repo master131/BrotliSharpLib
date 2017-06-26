@@ -48,7 +48,7 @@ namespace BrotliSharpLib {
             BROTLI_DECODER_ERROR_UNREACHABLE = -31
         }
 
-        private enum BrotliDecoderResult {
+        internal enum BrotliDecoderResult {
             /// <summary>Decoding error, e.g. corrupted input or memory allocation problem.</summary>
             BROTLI_DECODER_RESULT_ERROR = 0,
 
@@ -298,7 +298,14 @@ namespace BrotliSharpLib {
 
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] public HuffmanCode[] table;
             /* List of of symbol chains. */
-            public ushort* symbol_lists;
+            public ushort* symbol_lists {
+                get {
+                    /* Make small negative indexes addressable. */
+                    fixed (ushort* sla = symbols_lists_array)
+                        return &sla[BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1];
+                }
+            }
+
             /* Storage from symbol_lists. */
 
             public fixed ushort symbols_lists_array [BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1 +

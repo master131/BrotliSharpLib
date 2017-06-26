@@ -102,7 +102,7 @@ namespace BrotliSharpLib {
             BROTLI_MODE_FONT = 2
         }
 
-        private enum BrotliEncoderParameter {
+        internal enum BrotliEncoderParameter {
             /**
              * Tune encoder for specific input.
              *

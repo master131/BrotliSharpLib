@@ -4,7 +4,7 @@ using BrotliDecoderState = BrotliSharpLib.Brotli.BrotliDecoderStateStruct;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
-        private static unsafe void BrotliDecoderStateInit(ref BrotliDecoderState s) {
+        internal static unsafe void BrotliDecoderStateInit(ref BrotliDecoderState s) {
             BrotliDecoderStateInitWithCustomAllocators(ref s, null, null, null);
         }
 
@@ -79,14 +79,10 @@ namespace BrotliSharpLib {
             s.block_type_trees = null;
             s.block_len_trees = null;
 
-            /* Make small negative indexes addressable. */
-            fixed (ushort* sla = s.symbols_lists_array)
-                s.symbol_lists = &sla[BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1];
-
             s.mtf_upper_bound = 63;
         }
 
-        private static unsafe void BrotliDecoderStateCleanup(ref BrotliDecoderState s) {
+        internal static unsafe void BrotliDecoderStateCleanup(ref BrotliDecoderState s) {
             BrotliDecoderStateCleanupAfterMetablock(ref s);
 
             s.free_func(s.memory_manager_opaque, s.ringbuffer);

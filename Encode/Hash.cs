@@ -44,6 +44,13 @@ namespace BrotliSharpLib {
             public score_t score;
         }
 
+        private static unsafe void DestroyHasher(
+            ref MemoryManager m, HasherHandle* handle)
+        {
+            if ((void*)(*handle) == null) return;
+            BrotliFree(ref m, *handle);
+        }
+
         private static unsafe score_t BackwardReferenceScoreUsingLastDistance(
             size_t copy_length)
         {

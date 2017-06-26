@@ -43,6 +43,11 @@ namespace BrotliSharpLib {
             *(uint*) &rb->total_size_ = rb->size_ + rb->tail_size_;
         }
 
+        private static unsafe void RingBufferFree(ref MemoryManager m, RingBuffer* rb)
+        {
+            BrotliFree(ref m, rb->data_);
+        }
+
         /* Allocates or re-allocates data_ to the given length + plus some slack
            region before and after. Fills the slack regions with zeros. */
         private static unsafe void RingBufferInitBuffer(
