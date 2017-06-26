@@ -1173,7 +1173,7 @@ namespace BrotliSharpLib {
             return true;
         }
 
-        private static unsafe bool BrotliEncoderCompressStream(
+        internal static unsafe bool BrotliEncoderCompressStream(
             ref BrotliEncoderState s, BrotliEncoderOperation op, size_t* available_in,
             byte** next_in, size_t* available_out, byte** next_out,
             size_t* total_out) {
@@ -1248,7 +1248,7 @@ namespace BrotliSharpLib {
             return true;
         }
 
-        private static bool BrotliEncoderIsFinished(ref BrotliEncoderState s) {
+        internal static bool BrotliEncoderIsFinished(ref BrotliEncoderState s) {
             return (s.stream_state_ == BrotliEncoderStreamState.BROTLI_STREAM_FINISHED &&
                     !BrotliEncoderHasMoreOutput(ref s));
         }
@@ -1257,7 +1257,7 @@ namespace BrotliSharpLib {
             return (s.available_out_ != 0);
         }
 
-        private static unsafe void BrotliEncoderSetCustomDictionary(ref BrotliEncoderState s, size_t size, byte* dict) {
+        internal static unsafe void BrotliEncoderSetCustomDictionary(ref BrotliEncoderState s, size_t size, byte* dict) {
             size_t max_dict_size = BROTLI_MAX_BACKWARD_LIMIT(s.params_.lgwin);
             size_t dict_size = size;
 

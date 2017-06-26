@@ -31,6 +31,18 @@ namespace BrotliSharpLib {
             return CreateStruct<BrotliDecoderState>();
         }
 
+
+        internal static unsafe void BrotliDecoderSetCustomDictionary(
+            ref BrotliDecoderState s, size_t size, byte* dict)
+        {
+            if (size > (1u << 24))
+            {
+                return;
+            }
+            s.custom_dict = dict;
+            s.custom_dict_size = (int)size;
+        }
+
         private static unsafe BrotliDecoderResult BrotliDecoderDecompress(
             size_t encoded_size, byte* encoded_buffer, size_t* decoded_size,
             byte* decoded_buffer) {
@@ -1851,19 +1863,15 @@ namespace BrotliSharpLib {
                     else {
                         /* Read distance code in the command, unless it was implicitly zero. */
                         if (bl[2] == 0) {
-                            if (safe != 0)
-                            {
-                                if (!SafeDecodeDistanceBlockSwitch(ref s))
-                                {
+                            if (safe != 0) {
+                                if (!SafeDecodeDistanceBlockSwitch(ref s)) {
                                     result = BrotliDecoderErrorCode.BROTLI_DECODER_NEEDS_MORE_INPUT;
                                     goto saveStateAndReturn;
                                 }
                             }
-                            else
-                            {
+                            else {
                                 DecodeDistanceBlockSwitch(ref s);
                             }
-                            
                         }
                         if (safe != 0) {
                             if (!SafeReadDistance(ref s, br)) {
