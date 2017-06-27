@@ -47,14 +47,13 @@ using (var ms = new MemoryStream())
         /** bs.SetCustomDictionary(customDict); **/
         fs.CopyTo(bs);
         
-        /** Do not call ms.ToArray() here, refer to note below **/
+        /* IMPORTANT: Only use the destination stream after closing/disposing the BrotliStream
+           as the BrotliStream must be closed in order to signal that no more blocks are being written
+           for the final block to be flushed out 
+        */
+        bs.Dispose();
+        byte[] compressed = ms.ToArray();
     }
-    
-    /* IMPORTANT: Only use the destination stream after closing/disposing the BrotliStream
-       as the BrotliStream must be closed in order for the final block to be flushed out
-       as required by the original implementation
-     */
-    byte[] compressed = ms.ToArray();
 }
 ```
 
