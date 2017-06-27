@@ -9,6 +9,8 @@ namespace BrotliSharpLib.Tests
     [TestFixture]
     public class BrotliTests
     {
+        private const string TestdataDir = "testdata";
+
         private static readonly Dictionary<string, string> DecompressTestFiles = new Dictionary<string, string>()
         {
             { "10x10y.compressed", "10x10y" },
@@ -55,12 +57,20 @@ namespace BrotliSharpLib.Tests
             { "zeros.compressed", "zeros" },
         };
 
+        private static readonly List<string> CompressTestFiles = new List<string>
+        {
+            "alice29.txt",
+            "asyoulik.txt",
+            "lcet10.txt",
+            "plrabn12.txt"
+        };
+
         [SetUp]
         public void Setup()
         {
             // Look for testdata directory in project
             string directory = TestContext.CurrentContext.TestDirectory;
-            while (directory != null && !Directory.Exists(Path.Combine(directory, "testdata")))
+            while (directory != null && !Directory.Exists(Path.Combine(directory, TestdataDir)))
                 directory = Path.GetDirectoryName(directory);
 
             Assert.NotNull(directory, "testdata directory does not exist");
@@ -76,14 +86,36 @@ namespace BrotliSharpLib.Tests
                 Assert.AreEqual(original[i], decompressed[i], "Decompressed byte-mismatch detected (" + fileName + ")");
         }
 
-        [Test]
+        [Test, Order(1)]
+        public void Decompress()
+        {
+            // Run tests on data
+            foreach (var kvp in DecompressTestFiles)
+            {
+                var compressedFilePath = Path.Combine(TestdataDir, kvp.Key);
+                var originalFilePath = Path.Combine(TestdataDir, kvp.Value);
+
+                Assert.IsTrue(File.Exists(compressedFilePath), "Unable to find the compressed test file: " + kvp.Key);
+                Assert.IsTrue(File.Exists(originalFilePath), "Unable to find the test file: " + kvp.Value);
+
+                // Decompress the compressed data
+                var compressed = File.ReadAllBytes(compressedFilePath);
+                var decompressed = Brotli.DecompressBuffer(compressed, 0, compressed.Length);
+
+                // Compare the decompressed version with the original
+                var original = File.ReadAllBytes(originalFilePath);
+                CompareBuffers(original, decompressed, kvp.Key + " --> " + kvp.Value);
+            }
+        }
+
+        [Test, Order(2)]
         public void DecompressViaStream()
         {
             // Run tests on data
             foreach (var kvp in DecompressTestFiles)
             {
-                var compressedFilePath = Path.Combine("testdata", kvp.Key);
-                var originalFilePath = Path.Combine("testdata", kvp.Value);
+                var compressedFilePath = Path.Combine(TestdataDir, kvp.Key);
+                var originalFilePath = Path.Combine(TestdataDir, kvp.Value);
 
                 Assert.IsTrue(File.Exists(compressedFilePath), "Unable to find the compressed test file: " + kvp.Key);
                 Assert.IsTrue(File.Exists(originalFilePath), "Unable to find the test file: " + kvp.Value);
@@ -102,25 +134,34 @@ namespace BrotliSharpLib.Tests
             }
         }
 
-        [Test]
-        public void Decompress()
+        private static readonly int[] CompressQualities = { 1, 6, 9, 11 };
+
+        [Test, Order(3)]
+        public void Compress()
         {
             // Run tests on data
-            foreach (var kvp in DecompressTestFiles)
+            foreach (var file in CompressTestFiles)
             {
-                var compressedFilePath = Path.Combine("testdata", kvp.Key);
-                var originalFilePath = Path.Combine("testdata", kvp.Value);
+                var filePath = Path.Combine(TestdataDir, file);
+                Assert.IsTrue(File.Exists(filePath), "Unable to find the test file: " + file);
 
-                Assert.IsTrue(File.Exists(compressedFilePath), "Unable to find the compressed test file: " + kvp.Key);
-                Assert.IsTrue(File.Exists(originalFilePath), "Unable to find the test file: " + kvp.Value);
+                foreach (var quality in CompressQualities)
+                {
+                    // Compress using the current quality
+                    var original = File.ReadAllBytes(filePath);
+                    var compressed = Brotli.CompressBuffer(original, 0, original.Length, quality);
 
-                // Decompress the compressed data
-                var compressed = File.ReadAllBytes(compressedFilePath);
-                var decompressed = Brotli.DecompressBuffer(compressed, 0, compressed.Length);
-
-                // Compare the decompressed version with the original
-                var original = File.ReadAllBytes(originalFilePath);
-                CompareBuffers(original, decompressed, kvp.Key + " --> " + kvp.Value);
+                    // Decompress and verify with original
+                    try
+                    {
+                        var decompressed = Brotli.DecompressBuffer(compressed, 0, compressed.Length);
+                        CompareBuffers(original, decompressed, file);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new Exception("Decompress failed with compressed buffer quality " + quality + " for " + file, e);
+                    }
+                }
             }
         }
     }
