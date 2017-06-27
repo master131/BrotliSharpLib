@@ -1,13 +1,19 @@
 ﻿using System.IO;
+using System.Runtime.InteropServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
-        public static unsafe byte[] DecompressBuffer(byte[] buffer, int offset, int length) {
+        public static unsafe byte[] DecompressBuffer(byte[] buffer, int offset, int length, byte[] customDictionary = null) {
             using (var ms = new MemoryStream()) {
                 // Create the decoder state and intialise it.
                 var s = BrotliCreateDecoderState();
                 BrotliDecoderStateInit(ref s);
+
+                // Set the custom dictionary
+                GCHandle dictionaryHandle = customDictionary != null ? GCHandle.Alloc(customDictionary, GCHandleType.Pinned) : default(GCHandle);
+                if (customDictionary != null)
+                    BrotliDecoderSetCustomDictionary(ref s, customDictionary.Length, (byte*) dictionaryHandle.AddrOfPinnedObject());
 
                 // Create a 64k buffer to temporarily store decompressed contents.
                 byte[] writeBuf = new byte[0x10000];
@@ -45,6 +51,9 @@ namespace BrotliSharpLib {
 
                         // Cleanup and throw.
                         BrotliDecoderStateCleanup(ref s);
+                        if (customDictionary != null)
+                            dictionaryHandle.Free();
+
                         if (result != BrotliDecoderResult.BROTLI_DECODER_RESULT_SUCCESS)
                             throw new InvalidDataException("Decompress failed with error code: " + s.error_code);
 
