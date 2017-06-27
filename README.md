@@ -6,6 +6,12 @@ The projects uses a minimal set of APIs to ensure compatibility with a wide rang
 
 BrotliSharpLib is licensed under [MIT](https://github.com/master131/BrotliSharpLib/blob/master/LICENSE).
 
+## Installation
+BrotliSharpLib can be installed via the NuGet package [here](https://www.nuget.org/packages/BrotliSharpLib/).
+```
+Install-Package BrotliSharpLib
+```
+
 ## Usage
 **Generic/basic usage:**
 ```c#
