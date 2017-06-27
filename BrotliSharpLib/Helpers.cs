@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -469,6 +470,7 @@ namespace BrotliSharpLib {
             return ptr;
         }
 
+        [DebuggerDisplay("{Value}")]
         internal unsafe struct SizeT {
             private void* Value;
 
@@ -837,6 +839,11 @@ namespace BrotliSharpLib {
             public static size_t operator ~(size_t a)
             {
                 return new size_t(Is64Bit ? (void*)(~(ulong) a) : (void*)(~(uint)a));
+            }
+
+            public override string ToString()
+            {
+                return Is64Bit ? ((ulong)Value).ToString() : ((uint)Value).ToString();
             }
         }
     }

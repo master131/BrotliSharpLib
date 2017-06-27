@@ -137,7 +137,7 @@ namespace BrotliSharpLib
                         split->lengths[self->num_blocks_] = (uint)self->block_size_;
                         split->types[self->num_blocks_] = (byte)split->num_types;
                         self->last_histogram_ix_1 = self->last_histogram_ix_0;
-                        self->last_histogram_ix_1 = (byte)split->num_types;
+                        self->last_histogram_ix_0 = (byte)split->num_types;
                         last_entropy[1] = last_entropy[0];
                         last_entropy[0] = entropy;
                         ++self->num_blocks_;
@@ -335,7 +335,7 @@ namespace BrotliSharpLib
                         split->lengths[self->num_blocks_] = (uint)self->block_size_;
                         split->types[self->num_blocks_] = (byte)split->num_types;
                         self->last_histogram_ix_1 = self->last_histogram_ix_0;
-                        self->last_histogram_ix_1 = (byte)split->num_types;
+                        self->last_histogram_ix_0 = (byte)split->num_types;
                         last_entropy[1] = last_entropy[0];
                         last_entropy[0] = entropy;
                         ++self->num_blocks_;
@@ -542,7 +542,7 @@ namespace BrotliSharpLib
                         split->lengths[self->num_blocks_] = (uint)self->block_size_;
                         split->types[self->num_blocks_] = (byte)split->num_types;
                         self->last_histogram_ix_1 = self->last_histogram_ix_0;
-                        self->last_histogram_ix_1 = (byte)split->num_types;
+                        self->last_histogram_ix_0 = (byte)split->num_types;
                         last_entropy[1] = last_entropy[0];
                         last_entropy[0] = entropy;
                         ++self->num_blocks_;

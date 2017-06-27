@@ -131,7 +131,7 @@ namespace BrotliSharpLib {
             size_t i;
             BlockTypeCodeCalculator type_code_calculator;
             memset(type_histo, 0, (num_types + 2) * sizeof(uint));
-            memset(length_histo, 0, sizeof(uint) * BROTLI_NUM_BLOCK_LEN_SYMBOLS);
+            memset(length_histo, 0, BROTLI_NUM_BLOCK_LEN_SYMBOLS * sizeof(uint));
             InitBlockTypeCodeCalculator(&type_code_calculator);
             for (i = 0; i < num_blocks; ++i) {
                 size_t type_code = NextBlockTypeCode(&type_code_calculator, types[i]);
