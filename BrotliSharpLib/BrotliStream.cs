@@ -6,6 +6,9 @@ using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib
 {
+    /// <summary>
+    /// Represents a Brotli stream for compression or decompression.
+    /// </summary>
     public unsafe class BrotliStream : Stream {
         private Stream _stream;
         private CompressionMode _mode;
@@ -18,6 +21,13 @@ namespace BrotliSharpLib
         private Brotli.BrotliDecoderResult _lastDecoderState =
             Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BrotliStream"/> class using the specified stream and
+        /// compression mode, and optionally leaves the stream open.
+        /// </summary>
+        /// <param name="stream">The stream to compress or decompress.</param>
+        /// <param name="mode">One of the enumeration values that indicates whether to compress or decompress the stream.</param>
+        /// <param name="leaveOpen"><c>true</c> to leave the stream open after disposing the <see cref="BrotliStream"/> object; otherwise, <c>false</c>.</param>
         public BrotliStream(Stream stream, CompressionMode mode, bool leaveOpen) {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
@@ -46,14 +56,20 @@ namespace BrotliSharpLib
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BrotliStream"/> class using the specified stream and
+        /// compression mode.
+        /// </summary>
+        /// <param name="stream">The stream to compress or decompress.</param>
+        /// <param name="mode">One of the enumeration values that indicates whether to compress or decompress the stream.</param>
         public BrotliStream(Stream stream, CompressionMode mode) :
             this(stream, mode, false) {
         }
 
         /// <summary>
-        /// Sets the quality for compression
+        /// Sets the quality for compression.
         /// </summary>
-        /// <param name="quality">A value from 0-11</param>
+        /// <param name="quality">The quality value (a value from 0-11).</param>
         public void SetQuality(int quality) {
             if (_mode != CompressionMode.Compress)
                 throw new InvalidOperationException("SetQuality is only valid for compress");
@@ -68,9 +84,9 @@ namespace BrotliSharpLib
         }
 
         /// <summary>
-        /// Sets the dictionary for compression and decompression
+        /// Sets the dictionary for compression and decompression.
         /// </summary>
-        /// <param name="dictionary">The dictionary as a byte array</param>
+        /// <param name="dictionary">The dictionary as a byte array.</param>
         public void SetCustomDictionary(byte[] dictionary) {
             if (dictionary == null)
                 throw new ArgumentNullException(nameof(dictionary));
@@ -94,7 +110,7 @@ namespace BrotliSharpLib
         /// <summary>
         /// Sets the window size for the encoder
         /// </summary>
-        /// <param name="windowSize">A value from 0-24</param>
+        /// <param name="windowSize">The window size in bits (a value from 10-24)</param>
         public void SetWindow(int windowSize) {
             if (_mode != CompressionMode.Compress)
                 throw new InvalidOperationException("SetWindow is only valid for compress");
@@ -108,6 +124,10 @@ namespace BrotliSharpLib
                 (uint) windowSize);
         }
 
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="BrotliStream"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing"></param>
         protected override void Dispose(bool disposing) {
             if (disposing && !_disposed) {
                 FlushCompress(true);
@@ -121,7 +141,7 @@ namespace BrotliSharpLib
                 _disposed = true;
             }
 
-            if (disposing && !_leaveOpen && _stream != null) {
+            if (!_leaveOpen && _stream != null) {
                 _stream.Dispose();
                 _stream = null;
             }
@@ -129,6 +149,9 @@ namespace BrotliSharpLib
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// Flushes any buffered data into the stream
+        /// </summary>
         public override void Flush() {
             EnsureNotDisposed();
             FlushCompress(false);
@@ -149,10 +172,16 @@ namespace BrotliSharpLib
             WriteCore(buffer, 0, 0, op);
         }
 
+        /// <summary>
+        /// This operation is not supported and always throws a <see cref="NotSupportedException"/>.
+        /// </summary>
         public override long Seek(long offset, SeekOrigin origin) {
             throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// This operation is not supported and always throws a <see cref="NotSupportedException"/>.
+        /// </summary>
         public override void SetLength(long value) {
             throw new NotSupportedException();
         }
@@ -171,6 +200,13 @@ namespace BrotliSharpLib
                 throw new ArgumentException("Invalid argument offset and count");
         }
 
+        /// <summary>
+        /// Reads a number of decompressed bytes into the specified byte array.
+        /// </summary>
+        /// <param name="buffer">The array to store decompressed bytes.</param>
+        /// <param name="offset">The byte offset in <paramref name="buffer"/> at which the read bytes will be placed.</param>
+        /// <param name="count">The maximum number of decompressed bytes to read.</param>
+        /// <returns>The number of bytes that were read into the byte array.</returns>
         public override int Read(byte[] buffer, int offset, int count) {
             if (_mode != CompressionMode.Decompress)
                 throw new InvalidOperationException("Read is only supported in Decompress mode");
@@ -259,6 +295,12 @@ namespace BrotliSharpLib
             }
         }
 
+        /// <summary>
+        /// Writes compressed bytes to the underlying stream from the specified byte array.
+        /// </summary>
+        /// <param name="buffer">The buffer that contains the data to compress.</param>
+        /// <param name="offset">The byte offset in <paramref name="buffer"/> from which the bytes will be read.</param>
+        /// <param name="count">The maximum number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count) {
             if (_mode != CompressionMode.Compress)
                 throw new InvalidOperationException("Write is only supported in Compress mode");
@@ -268,6 +310,9 @@ namespace BrotliSharpLib
             WriteCore(buffer, offset, count, Brotli.BrotliEncoderOperation.BROTLI_OPERATION_PROCESS);
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the stream supports reading while decompressing a file.
+        /// </summary>
         public override bool CanRead {
             get {
                 if (_stream == null)
@@ -277,8 +322,14 @@ namespace BrotliSharpLib
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the stream supports seeking.
+        /// </summary>
         public override bool CanSeek => false;
 
+        /// <summary>
+        /// Gets a value indicating whether the stream supports writing.
+        /// </summary>
         public override bool CanWrite {
             get {
                 if (_stream == null)
@@ -288,12 +339,18 @@ namespace BrotliSharpLib
             }
         }
 
+        /// <summary>
+        /// This property is not supported and always throws a <see cref="NotSupportedException"/>.
+        /// </summary>
         public override long Length {
             get {
                 throw new NotSupportedException();
             }
         }
 
+        /// <summary>
+        /// This property is not supported and always throws a <see cref="NotSupportedException"/>.
+        /// </summary>
         public override long Position {
             get {
                 throw new NotSupportedException();

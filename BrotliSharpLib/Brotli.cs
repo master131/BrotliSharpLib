@@ -1,10 +1,34 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
+    /// <summary>
+    /// A class for compressing and decompressing data using the brotli algorithm.
+    /// </summary>
     public static partial class Brotli {
+        /// <summary>
+        /// Decompresses a byte array into a new byte array using brotli.
+        /// </summary>
+        /// <param name="buffer">The byte array to decompress.</param>
+        /// <param name="offset">The byte offset in <paramref name="buffer"/> to read from.</param>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <param name="customDictionary">The custom dictionary that will be passed to the decoder</param>
+        /// <returns>The byte array in compressed form</returns>
         public static unsafe byte[] DecompressBuffer(byte[] buffer, int offset, int length, byte[] customDictionary = null) {
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+
+            if (offset + length > buffer.Length)
+                throw new IndexOutOfRangeException("Offset and length exceed the range of the buffer");
+
             using (var ms = new MemoryStream()) {
                 // Create the decoder state and intialise it.
                 var s = BrotliCreateDecoderState();
@@ -63,8 +87,30 @@ namespace BrotliSharpLib {
             }
         }
 
+        /// <summary>
+        /// Compresses a byte array into a new byte array using brotli.
+        /// </summary>
+        /// <param name="buffer">The byte array to compress.</param>
+        /// <param name="offset">The byte offset in <paramref name="buffer"/> to read from</param>.
+        /// <param name="length">The number of bytes to read.</param>
+        /// <param name="quality">The quality of the compression. This must be a value between 0 to 11 (inclusive).</param>
+        /// <param name="lgwin">The window size (in bits). This must be a value between 10 and 24 (inclusive).</param>
+        /// <param name="customDictionary">The custom dictionary that will be passed to the encoder.</param>
+        /// <returns></returns>
         public static unsafe byte[] CompressBuffer(byte[] buffer, int offset, int length, int quality = -1,
             int lgwin = -1, byte[] customDictionary = null) {
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
+
+            if (offset + length > buffer.Length)
+                throw new IndexOutOfRangeException("Offset and length exceed the range of the buffer");
+
             using (var ms = new MemoryStream()) {
                 // Create the encoder state and intialise it.
                 var s = BrotliEncoderCreateInstance(null, null, null);
