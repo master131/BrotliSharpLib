@@ -198,22 +198,18 @@ namespace BrotliSharpLib {
             }
         }
 
-        private static unsafe size_t IndexOf(byte* v, size_t v_size, byte value)
-        {
+        private static unsafe size_t IndexOf(byte* v, size_t v_size, byte value) {
             size_t i = 0;
-            for (; i < v_size; ++i)
-            {
+            for (; i < v_size; ++i) {
                 if (v[i] == value) return i;
             }
             return i;
         }
 
-        private static unsafe void MoveToFront(byte* v, size_t index)
-        {
+        private static unsafe void MoveToFront(byte* v, size_t index) {
             byte value = v[index];
             size_t i;
-            for (i = index; i != 0; --i)
-            {
+            for (i = index; i != 0; --i) {
                 v[i] = v[i - 1];
             }
             v[0] = value;
@@ -221,30 +217,25 @@ namespace BrotliSharpLib {
 
         private static unsafe void MoveToFrontTransform(uint* v_in,
             size_t v_size,
-            uint* v_out)
-        {
+            uint* v_out) {
             size_t i;
             byte* mtf = stackalloc byte[256];
             uint max_value;
-            if (v_size == 0)
-            {
+            if (v_size == 0) {
                 return;
             }
             max_value = v_in[0];
-            for (i = 1; i < v_size; ++i)
-            {
+            for (i = 1; i < v_size; ++i) {
                 if (v_in[i] > max_value) max_value = v_in[i];
             }
-            for (i = 0; i <= max_value; ++i)
-            {
-                mtf[i] = (byte)i;
+            for (i = 0; i <= max_value; ++i) {
+                mtf[i] = (byte) i;
             }
             {
                 size_t mtf_size = max_value + 1;
-                for (i = 0; i < v_size; ++i)
-                {
-                    size_t index = IndexOf(mtf, mtf_size, (byte)v_in[i]);
-                    v_out[i] = (uint)index;
+                for (i = 0; i < v_size; ++i) {
+                    size_t index = IndexOf(mtf, mtf_size, (byte) v_in[i]);
+                    v_out[i] = (uint) index;
                     MoveToFront(mtf, index);
                 }
             }
@@ -258,17 +249,14 @@ namespace BrotliSharpLib {
            Log2Floor(L) and the number of extra bits is the same as the prefix code. */
         private static unsafe void RunLengthCodeZeros(size_t in_size,
             uint* v, size_t* out_size,
-            uint* max_run_length_prefix)
-        {
+            uint* max_run_length_prefix) {
             uint max_reps = 0;
             size_t i;
             uint max_prefix;
-            for (i = 0; i < in_size;)
-            {
+            for (i = 0; i < in_size;) {
                 uint reps = 0;
                 for (; i < in_size && v[i] != 0; ++i) ;
-                for (; i < in_size && v[i] == 0; ++i)
-                {
+                for (; i < in_size && v[i] == 0; ++i) {
                     ++reps;
                 }
                 max_reps = Math.Max(reps, max_reps);
@@ -277,35 +265,28 @@ namespace BrotliSharpLib {
             max_prefix = Math.Min(max_prefix, *max_run_length_prefix);
             *max_run_length_prefix = max_prefix;
             *out_size = 0;
-            for (i = 0; i < in_size;)
-            {
-                if (v[i] != 0)
-                {
+            for (i = 0; i < in_size;) {
+                if (v[i] != 0) {
                     v[*out_size] = v[i] + *max_run_length_prefix;
                     ++i;
                     ++(*out_size);
                 }
-                else
-                {
+                else {
                     uint reps = 1;
                     size_t k;
-                    for (k = i + 1; k < in_size && v[k] == 0; ++k)
-                    {
+                    for (k = i + 1; k < in_size && v[k] == 0; ++k) {
                         ++reps;
                     }
                     i += reps;
-                    while (reps != 0)
-                    {
-                        if (reps < (2u << (int) max_prefix))
-                        {
+                    while (reps != 0) {
+                        if (reps < (2u << (int) max_prefix)) {
                             uint run_length_prefix = Log2FloorNonZero(reps);
                             uint extra_bits = reps - (1u << (int) run_length_prefix);
                             v[*out_size] = run_length_prefix + (extra_bits << 9);
                             ++(*out_size);
                             break;
                         }
-                        else
-                        {
+                        else {
                             uint extra_bits = (1u << (int) max_prefix) - 1u;
                             v[*out_size] = max_prefix + (extra_bits << 9);
                             reps -= (2u << (int) max_prefix) - 1u;
@@ -372,10 +353,8 @@ namespace BrotliSharpLib {
         /* Stores the next symbol with the entropy code of the current block type.
            Updates the block type and block length at block boundaries. */
         private static unsafe void StoreSymbol(BlockEncoder* self, size_t symbol, size_t* storage_ix,
-            byte* storage)
-        {
-            if (self->block_len_ == 0)
-            {
+            byte* storage) {
+            if (self->block_len_ == 0) {
                 size_t block_ix = ++self->block_ix_;
                 uint block_len = self->block_lengths_[block_ix];
                 byte block_type = self->block_types_[block_ix];
@@ -396,15 +375,13 @@ namespace BrotliSharpLib {
            Updates the block type and block length at block boundaries. */
         private static unsafe void StoreSymbolWithContext(BlockEncoder* self, size_t symbol,
             size_t context, uint* context_map, size_t* storage_ix,
-            byte* storage, size_t context_bits)
-        {
-            if (self->block_len_ == 0)
-            {
+            byte* storage, size_t context_bits) {
+            if (self->block_len_ == 0) {
                 size_t block_ix = ++self->block_ix_;
                 uint block_len = self->block_lengths_[block_ix];
                 byte block_type = self->block_types_[block_ix];
                 self->block_len_ = block_len;
-                self->entropy_ix_ = (size_t)block_type << (int) context_bits;
+                self->entropy_ix_ = (size_t) block_type << (int) context_bits;
                 StoreBlockSwitch(&self->block_split_code_, block_len, block_type, false,
                     storage_ix, storage);
             }
@@ -416,8 +393,7 @@ namespace BrotliSharpLib {
             }
         }
 
-        private static unsafe void CleanupBlockEncoder(ref MemoryManager m, BlockEncoder* self)
-        {
+        private static unsafe void CleanupBlockEncoder(ref MemoryManager m, BlockEncoder* self) {
             BrotliFree(ref m, self->depths_);
             BrotliFree(ref m, self->bits_);
         }
@@ -493,7 +469,7 @@ namespace BrotliSharpLib {
                     mb->distance_context_map, mb->distance_context_map_size,
                     mb->distance_histograms_size, tree, storage_ix, storage);
             }
-            
+
             BlockEncoderLiteral.BuildAndStoreEntropyCodes(ref m, &literal_enc, mb->literal_histograms,
                 mb->literal_histograms_size, tree, storage_ix, storage);
 
@@ -1121,6 +1097,11 @@ namespace BrotliSharpLib {
                 storage_ix, storage);
         }
 
+        private static unsafe bool SortHuffmanTreeBitStream(
+            HuffmanTree* v0, HuffmanTree* v1) {
+            return (v0->total_count_ < v1->total_count_);
+        }
+
         private static unsafe void BrotliBuildAndStoreHuffmanTreeFast(ref MemoryManager m,
             uint* histogram,
             size_t histogram_total,
@@ -1129,7 +1110,8 @@ namespace BrotliSharpLib {
             size_t* storage_ix,
             byte* storage) {
             size_t count = 0;
-            size_t[] symbols = new size_t[4];
+            size_t* symbols = stackalloc size_t[4];
+            memset(symbols, 0, 4 * sizeof(size_t));
             size_t length = 0;
             size_t total = histogram_total;
             while (total != 0) {
@@ -1156,13 +1138,14 @@ namespace BrotliSharpLib {
                 size_t max_tree_size = 2 * length + 1;
                 HuffmanTree* tree = (HuffmanTree*) BrotliAllocate(ref m, max_tree_size * sizeof(HuffmanTree));
                 uint count_limit;
+
                 for (count_limit = 1;; count_limit *= 2) {
                     HuffmanTree* node = tree;
                     size_t l;
                     for (l = length; l != 0;) {
                         --l;
                         if (histogram[l] != 0) {
-                            if (histogram[l] >= count_limit) {
+                            if ((histogram[l] >= count_limit)) {
                                 InitHuffmanTree(node, histogram[l], -1, (short) l);
                             }
                             else {
@@ -1178,7 +1161,7 @@ namespace BrotliSharpLib {
                         int j = n + 1; /* Points to the next non-leaf node. */
                         int k;
 
-                        SortHuffmanTreeItems(tree, (size_t) n, SortHuffmanTree);
+                        SortHuffmanTreeItems(tree, (size_t) n, SortHuffmanTreeBitStream);
                         /* The nodes are:
                            [0, n): the sorted leaf nodes that we start with.
                            [n]: we add a sentinel here.
@@ -1225,6 +1208,7 @@ namespace BrotliSharpLib {
                 }
                 BrotliFree(ref m, tree);
             }
+
             BrotliConvertBitDepthsToSymbols(depth, length, bits);
             if (count <= 4) {
                 size_t i;
@@ -1263,14 +1247,14 @@ namespace BrotliSharpLib {
                 }
             }
             else {
-                uint previous_value = 8;
+                byte previous_value = 8;
                 size_t i;
                 /* Complex Huffman Tree */
                 StoreStaticCodeLengthCode(storage_ix, storage);
 
                 /* Actual RLE coding. */
                 for (i = 0; i < length;) {
-                    uint value = depth[i];
+                    byte value = depth[i];
                     size_t reps = 1;
                     size_t k;
                     for (k = i + 1; k < length && depth[k] == value; ++k) {
