@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -12,8 +13,8 @@ namespace BrotliSharpLib {
                 /* Smallest cost to get to this byte from the beginning, as found so far. */
                 public unsafe float cost {
                     get {
-                        fixed (uint* u = &v)
-                            return *(float*) u;
+                        uint vv = v;
+                        return *(float*)(&vv);
                     }
                     set { v = *(uint*) &value; }
                 }
@@ -170,6 +171,9 @@ namespace BrotliSharpLib {
             return self->cost_dist_[distcode];
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe float ZopfliCostModelGetLiteralCosts(
             ZopfliCostModel* self, size_t from, size_t to) {
             return self->literal_costs_[to] - self->literal_costs_[from];

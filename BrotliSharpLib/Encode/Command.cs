@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
-
 
 namespace BrotliSharpLib {
     public static partial class Brotli {
@@ -37,6 +37,9 @@ namespace BrotliSharpLib {
             public ushort dist_prefix_;
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static ushort GetInsertLengthCode(size_t insertlen)
         {
             if (insertlen < 6)
@@ -66,6 +69,9 @@ namespace BrotliSharpLib {
             }
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe ushort GetCopyLengthCode(size_t copylen)
         {
             if (copylen < 10)
@@ -87,6 +93,9 @@ namespace BrotliSharpLib {
             }
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static ushort CombineLengthCodes(
             ushort inscode, ushort copycode, bool use_last_distance)
         {
@@ -159,6 +168,9 @@ namespace BrotliSharpLib {
             }
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe uint CommandCopyLenCode(Command* self)
         {
             return (self->copy_len_ & 0xFFFFFF) ^ (self->copy_len_ >> 24);

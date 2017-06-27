@@ -558,10 +558,16 @@ namespace BrotliSharpLib {
                 return new size_t(p);
             }
 
+#if AGGRESSIVE_INLINING
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static explicit operator size_t(double p) {
                 return new size_t(Is64Bit ? (void*) (ulong) p : (void*) (uint) p);
             }
 
+#if AGGRESSIVE_INLINING
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public static explicit operator size_t(float p) {
                 return new size_t(Is64Bit ? (void*)(ulong)p : (void*)(uint)p);
             }
@@ -591,37 +597,20 @@ namespace BrotliSharpLib {
                 return new size_t((byte*) a + b);
             }
 
-#if AGGRESSIVE_INLINING
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public static bool operator >(size_t a, size_t b)
-            {
-                return Is64Bit ? (ulong)a > (ulong)b : (uint)a > (uint)b;
+            public static bool operator >(size_t a, size_t b) {
+                return a.Value > b.Value;
             }
 
-#if AGGRESSIVE_INLINING
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public static bool operator >=(size_t a, size_t b)
-            {
-                return Is64Bit ? (ulong)a >= (ulong)b : (uint)a >= (uint)b;
+            public static bool operator >=(size_t a, size_t b) {
+                return a.Value >= b.Value;
             }
 
-#if AGGRESSIVE_INLINING
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public static bool operator <=(size_t a, size_t b)
-            {
-                return Is64Bit ? (ulong)a <= (ulong)b : (uint)a <= (uint)b;
+            public static bool operator <=(size_t a, size_t b) {
+                return a.Value <= b.Value;
             }
 
-
-#if AGGRESSIVE_INLINING
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public static bool operator <(size_t a, size_t b)
-            {
-                return Is64Bit ? (ulong)a < (ulong)b : (uint)a < (uint)b;
+            public static bool operator <(size_t a, size_t b) {
+                return a.Value < b.Value;
             }
 
 #if AGGRESSIVE_INLINING
