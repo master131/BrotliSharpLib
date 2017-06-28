@@ -6,8 +6,8 @@
 		<NoWarn>1570;1701</NoWarn>
 	</PropertyGroup>
 	<PropertyGroup>
-		<Version>0.1</Version>
-		<FileVersion>0.1</FileVersion>
+		<Version>0.1.1</Version>
+		<FileVersion>0.1.1</FileVersion>
 		<Authors>master131</Authors>
 		<Description>Full C# port of Brotli compression library.</Description>
 		<Copyright>Copyright (c) 2017 master131</Copyright>
@@ -15,6 +15,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>brotli;csharp;net</PackageTags>
+		<AssemblyVersion>0.1.1.0</AssemblyVersion>
+		<PackageLicenseUrl>https://github.com/master131/BrotliSharpLib/blob/master/LICENSE</PackageLicenseUrl>
+		<PackageProjectUrl>https://github.com/master131/BrotliSharpLib</PackageProjectUrl>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40'">
 		<DefineConstants>$(DefineConstants);AGGRESSIVE_INLINING</DefineConstants>
