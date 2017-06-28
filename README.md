@@ -108,6 +108,7 @@ Runtime=Clr
 ```
 #### Decompression
 File: UPX v3.91 (Windows Executable)
+
  |         Method |     Mean |
  |--------------- |---------:|
  |     GoogleImpl | 12.75 ms |
@@ -116,6 +117,7 @@ File: UPX v3.91 (Windows Executable)
  
  #### Compression
  File: plrabn12.txt
+ 
  |         Method |  Quality |         Mean |
  |--------------- |--------- |-------------:|
  | BrotliSharpLib |        1 |     9.132 ms |
