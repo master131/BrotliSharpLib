@@ -96,7 +96,7 @@ Performance can also be further improved by building BrotliSharpLib using .NET F
 
 ### Benchmark
 
-The following are benchmark results using [DotNetBenchmark](https://github.com/dotnet/BenchmarkDotNet) with BrotliSharpLib (v0.1.1) and [Google's C# implementation](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) built against .NET Framework 4.6.1. The original C version was compiled in Release mode using Visual Studio 2017 (v141) as a 64-bit Windows executable.
+The following are benchmark results using [DotNetBenchmark](https://github.com/dotnet/BenchmarkDotNet) with BrotliSharpLib (v0.2) and [Google's C# implementation](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) built against .NET Framework 4.6.1. The original C version was compiled in Release mode using Visual Studio 2017 (v141) as a 64-bit Windows executable.
 
 ``` ini
 BenchmarkDotNet=v0.10.6, OS=Windows 10 Redstone 2 (10.0.15063)
@@ -128,7 +128,7 @@ File: UPX v3.91 (Windows Executable)
  |     Original C |        6 |    36.540 ms |
  | BrotliSharpLib |        9 |   116.318 ms |
  |     Original C |        9 |    73.080 ms |
- | BrotliSharpLib |       11 | 4,476.191 ms |
+ | BrotliSharpLib |       11 |  2201.000 ms |
  |     Original C |       11 |    877.58 ms |
  
- While BrotliSharpLib performs comparatively at lower quality levels, it performs up to five times worse at level 11. Future versions of the port will hopefully bring this down.
+ While BrotliSharpLib performs comparatively at lower quality levels, it performs up to three times worse at level 11. Future versions of the port will hopefully bring this down.
