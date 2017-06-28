@@ -115,6 +115,8 @@ File: UPX v3.91 (Windows Executable)
  | BrotliSharpLib | 11.63 ms | 
  |     Original C | 11.17 ms |
  
+ As seen above, BrotliSharpLib performs close to the original C version in terms of decompression.
+
  #### Compression
  File: plrabn12.txt
  
@@ -128,3 +130,5 @@ File: UPX v3.91 (Windows Executable)
  |     Original C |        9 |    73.080 ms |
  | BrotliSharpLib |       11 | 4,476.191 ms |
  |     Original C |       11 |    877.58 ms |
+ 
+ While BrotliSharpLib performs comparatively at lower quality levels, it performs up to five times worse at level 11. Future versions of the port will hopefully bring this down.
