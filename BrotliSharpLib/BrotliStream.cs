@@ -67,6 +67,14 @@ namespace BrotliSharpLib
         }
 
         /// <summary>
+        /// Ensures that resources are freed and other cleanup operations are performed when the garbage collector reclaims the <see cref="BrotliStream"/>.
+        /// </summary>
+        ~BrotliStream()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
         /// Sets the quality for compression.
         /// </summary>
         /// <param name="quality">The quality value (a value from 0-11).</param>
@@ -79,6 +87,8 @@ namespace BrotliSharpLib
                                                                        Brotli.BROTLI_MIN_QUALITY + "-" + Brotli
                                                                            .BROTLI_MAX_QUALITY);
 
+            EnsureNotDisposed();
+
             Brotli.BrotliEncoderSetParameter(ref _encoderState, Brotli.BrotliEncoderParameter.BROTLI_PARAM_QUALITY,
                 (uint) quality);
         }
@@ -90,6 +100,8 @@ namespace BrotliSharpLib
         public void SetCustomDictionary(byte[] dictionary) {
             if (dictionary == null)
                 throw new ArgumentNullException(nameof(dictionary));
+
+            EnsureNotDisposed();
 
             if (_customDictionary != IntPtr.Zero)
                 Marshal.FreeHGlobal(_customDictionary);
@@ -120,6 +132,8 @@ namespace BrotliSharpLib
                                                                           Brotli.BROTLI_MIN_WINDOW_BITS + "-" + Brotli
                                                                               .BROTLI_MAX_WINDOW_BITS);
 
+            EnsureNotDisposed();
+
             Brotli.BrotliEncoderSetParameter(ref _encoderState, Brotli.BrotliEncoderParameter.BROTLI_PARAM_LGWIN,
                 (uint) windowSize);
         }
@@ -129,19 +143,21 @@ namespace BrotliSharpLib
         /// </summary>
         /// <param name="disposing"></param>
         protected override void Dispose(bool disposing) {
-            if (disposing && !_disposed) {
+            if (!_disposed) {
                 FlushCompress(true);
 
                 if (_mode == CompressionMode.Compress)
                     Brotli.BrotliEncoderDestroyInstance(ref _encoderState);
                 else
                     Brotli.BrotliDecoderStateCleanup(ref _decoderState);
-                if (_customDictionary != IntPtr.Zero)
+                if (_customDictionary != IntPtr.Zero) {
                     Marshal.FreeHGlobal(_customDictionary);
+                    _customDictionary = IntPtr.Zero;
+                }
                 _disposed = true;
             }
 
-            if (!_leaveOpen && _stream != null) {
+            if (disposing && !_leaveOpen && _stream != null) {
                 _stream.Dispose();
                 _stream = null;
             }
@@ -363,6 +379,9 @@ namespace BrotliSharpLib
         private void EnsureNotDisposed() {
             if (_stream == null)
                 throw new ObjectDisposedException(null, "The underlying stream has been disposed");
+
+            if (_disposed)
+                throw new ObjectDisposedException(null);
         }
     }
 }

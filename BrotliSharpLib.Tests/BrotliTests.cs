@@ -184,21 +184,19 @@ namespace BrotliSharpLib.Tests
                         {
                             bs.SetQuality(quality);
                             fs.CopyTo(bs);
-                        }
+                            bs.Dispose();
 
-                        // ^-- Important to read memory stream after closing the BrotliStream during compression
-                        // to flush the final output.
-
-                        var compressed = ms.ToArray();
-                        // Decompress and verify with original
-                        try
-                        {
-                            var decompressed = Brotli.DecompressBuffer(compressed, 0, compressed.Length);
-                            CompareBuffers(File.ReadAllBytes(filePath), decompressed, file);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new Exception("Decompress failed with compressed buffer quality " + quality + " for " + file, e);
+                            var compressed = ms.ToArray();
+                            // Decompress and verify with original
+                            try
+                            {
+                                var decompressed = Brotli.DecompressBuffer(compressed, 0, compressed.Length);
+                                CompareBuffers(File.ReadAllBytes(filePath), decompressed, file);
+                            }
+                            catch (Exception e)
+                            {
+                                throw new Exception("Decompress failed with compressed buffer quality " + quality + " for " + file, e);
+                            }
                         }
                     }
                 }
