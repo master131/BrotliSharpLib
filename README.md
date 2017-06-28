@@ -95,27 +95,34 @@ For optimal performance, ensure to build BrotliSharpLib in **Release** mode to e
 Performance can also be further improved by building BrotliSharpLib using .NET Framework 4.5 or above (or any framework that supports AggressiveInlining). Selecting a specific target platform (instead of AnyCPU) where possible can also further improve performance. All of this however, is completely optional as BrotliSharpLib is designed to run in a wide range of contexts and configurations regardless.
 
 ### Benchmark
-On average, BrotliSharpLib runs about 11-12% faster than the standard [C# decoding implementation provided by Google](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) which is a straight auto-conversion of the Java port using [sharpen](https://github.com/mono/sharpen).
 
-The following are benchmark results using [DotNetBenchmark](https://github.com/dotnet/BenchmarkDotNet) with BrotliSharpLib and Google's C# implementation built against .NET Framework 4.6.1.
+The following are benchmark results using [DotNetBenchmark](https://github.com/dotnet/BenchmarkDotNet) with BrotliSharpLib (v0.1.1) and [Google's C# implementation](https://github.com/google/brotli/tree/master/csharp/org/brotli/dec) built against .NET Framework 4.6.1. The original C version was compiled in Release mode using Visual Studio 2017 (v141) as a 64-bit Windows executable.
 
 ``` ini
-
 BenchmarkDotNet=v0.10.6, OS=Windows 10 Redstone 2 (10.0.15063)
 Processor=Intel Core i5-6600K CPU 3.50GHz (Skylake), ProcessorCount=4
 Frequency=3421875 Hz, Resolution=292.2374 ns, Timer=TSC
   [Host]       : Clr 4.0.30319.42000, 64bit RyuJIT-v4.7.2046.0
-  LegacyJitX64 : Clr 4.0.30319.42000, 64bit LegacyJIT/clrjit-v4.7.2046.0;compatjit-v4.7.2046.0
-  LegacyJitX86 : Clr 4.0.30319.42000, 32bit LegacyJIT-v4.7.2046.0
   RyuJitX64    : Clr 4.0.30319.42000, 64bit RyuJIT-v4.7.2046.0
-
 Runtime=Clr  
 ```
- |         Method |          Job |       Jit | Platform |     Mean |     Error |    StdDev |
- |--------------- |------------- |---------- |--------- |---------:|----------:|----------:|
- |     GoogleImpl | LegacyJitX64 | LegacyJit |      X64 | 12.49 ms | 0.1086 ms | 0.0907 ms |
- | BrotliSharpLib | LegacyJitX64 | LegacyJit |      X64 | 11.20 ms | 0.1380 ms | 0.1290 ms |
- |     GoogleImpl | LegacyJitX86 | LegacyJit |      X86 | 16.16 ms | 0.1305 ms | 0.1156 ms |
- | BrotliSharpLib | LegacyJitX86 | LegacyJit |      X86 | 14.02 ms | 0.1395 ms | 0.1305 ms |
- |     GoogleImpl |    RyuJitX64 |    RyuJit |      X64 | 12.75 ms | 0.1556 ms | 0.1456 ms |
- | BrotliSharpLib |    RyuJitX64 |    RyuJit |      X64 | 11.63 ms | 0.0785 ms | 0.0735 ms |
+#### Decompression
+File: UPX v3.91 (Windows Executable)
+ |         Method |     Mean |
+ |--------------- |---------:|
+ |     GoogleImpl | 12.75 ms |
+ | BrotliSharpLib | 11.63 ms | 
+ |     Original C | 11.17 ms |
+ 
+ #### Compression
+ File: plrabn12.txt
+ |         Method |  Quality |         Mean |
+ |--------------- |--------- |-------------:|
+ | BrotliSharpLib |        1 |     9.132 ms |
+ |     Original C |        1 |     9.570 ms |
+ | BrotliSharpLib |        6 |    58.720 ms |
+ |     Original C |        6 |    36.540 ms |
+ | BrotliSharpLib |        9 |   116.318 ms |
+ |     Original C |        9 |    73.080 ms |
+ | BrotliSharpLib |       11 | 4,476.191 ms |
+ |     Original C |       11 |    877.58 ms |
