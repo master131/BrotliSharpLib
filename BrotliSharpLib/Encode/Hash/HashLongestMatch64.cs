@@ -93,12 +93,7 @@ namespace BrotliSharpLib {
                 size_t input_size) {
                 size_t bucket_size = (size_t) 1 << params_->hasher.bucket_bits;
                 size_t block_size = (size_t) 1 << params_->hasher.block_bits;
-#if SIZE_OF_T
-                return Marshal.SizeOf<HashLongestMatch>()
-#else
-                return Marshal.SizeOf(typeof(HashLongestMatch))
-#endif
-                    + bucket_size * (2 + 4 * block_size);
+                return sizeof(HashLongestMatch) + bucket_size * (2 + 4 * block_size);
             }
 
             /* Look at 4 bytes at &data[ix & mask].

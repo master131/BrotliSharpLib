@@ -71,11 +71,7 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
-#if SIZE_OF_T
-                return Marshal.SizeOf<HashLongestMatchQuickly>();
-#else
-                return Marshal.SizeOf(typeof(HashLongestMatchQuickly));
-#endif
+                return sizeof(HashLongestMatchQuickly);
             }
 
             /* Look at 5 bytes at &data[ix & mask].
@@ -394,11 +390,7 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
-#if SIZE_OF_T
-                return Marshal.SizeOf<HashLongestMatchQuickly>();
-#else
-                return Marshal.SizeOf(typeof(HashLongestMatchQuickly));
-#endif
+                return sizeof(HashLongestMatchQuickly);
             }
 
             /* Look at 5 bytes at &data[ix & mask].
@@ -723,11 +715,7 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
-#if SIZE_OF_T
-                return Marshal.SizeOf<HashLongestMatchQuickly>();
-#else
-                return Marshal.SizeOf(typeof(HashLongestMatchQuickly));
-#endif
+                return sizeof(HashLongestMatchQuickly);
             }
 
             /* Look at 5 bytes at &data[ix & mask].
@@ -1057,11 +1045,7 @@ namespace BrotliSharpLib {
 
             public override unsafe size_t HashMemAllocInBytes(BrotliEncoderParams* params_, bool one_shot,
                 size_t input_size) {
-#if SIZE_OF_T
-                return Marshal.SizeOf<HashLongestMatchQuickly>();
-#else
-                return Marshal.SizeOf(typeof(HashLongestMatchQuickly));
-#endif
+                return sizeof(HashLongestMatchQuickly);
             }
 
             /* Look at 5 bytes at &data[ix & mask].
