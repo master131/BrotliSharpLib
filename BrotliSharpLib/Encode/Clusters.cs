@@ -284,19 +284,7 @@ namespace BrotliSharpLib {
                        After this limit is reached, we only keep searching for the best pair. */
                     size_t max_num_pairs = Math.Min(
                         64 * num_clusters, (num_clusters / 2) * num_clusters);
-                    if (pairs_capacity < (max_num_pairs + 1)) {
-                        size_t _new_size = (pairs_capacity == 0) ? (max_num_pairs + 1) : pairs_capacity;
-                        HistogramPair* new_array;
-                        while (_new_size < (max_num_pairs + 1)) _new_size *= 2;
-                        new_array = (HistogramPair*) BrotliAllocate(ref m, _new_size * sizeof(HistogramPair));
-                        if (pairs_capacity != 0)
-
-                            memcpy(new_array, pairs, pairs_capacity * sizeof(HistogramPair));
-
-                        BrotliFree(ref m, pairs);
-                        pairs = new_array;
-                        pairs_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramPair), (void**)&pairs, &pairs_capacity, max_num_pairs + 1);
 
                     /* Collapse similar histograms. */
                     num_clusters = BrotliHistogramCombine(out_, cluster_size,
@@ -643,20 +631,7 @@ namespace BrotliSharpLib {
                        After this limit is reached, we only keep searching for the best pair. */
                     size_t max_num_pairs = Math.Min(
                         64 * num_clusters, (num_clusters / 2) * num_clusters);
-                    if (pairs_capacity < (max_num_pairs + 1))
-                    {
-                        size_t _new_size = (pairs_capacity == 0) ? (max_num_pairs + 1) : pairs_capacity;
-                        HistogramPair* new_array;
-                        while (_new_size < (max_num_pairs + 1)) _new_size *= 2;
-                        new_array = (HistogramPair*)BrotliAllocate(ref m, _new_size * sizeof(HistogramPair));
-                        if (pairs_capacity != 0)
-
-                            memcpy(new_array, pairs, pairs_capacity * sizeof(HistogramPair));
-
-                        BrotliFree(ref m, pairs);
-                        pairs = new_array;
-                        pairs_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramPair), (void**)&pairs, &pairs_capacity, max_num_pairs + 1);
 
                     /* Collapse similar histograms. */
                     num_clusters = BrotliHistogramCombine(out_, cluster_size,
@@ -1003,20 +978,7 @@ namespace BrotliSharpLib {
                        After this limit is reached, we only keep searching for the best pair. */
                     size_t max_num_pairs = Math.Min(
                         64 * num_clusters, (num_clusters / 2) * num_clusters);
-                    if (pairs_capacity < (max_num_pairs + 1))
-                    {
-                        size_t _new_size = (pairs_capacity == 0) ? (max_num_pairs + 1) : pairs_capacity;
-                        HistogramPair* new_array;
-                        while (_new_size < (max_num_pairs + 1)) _new_size *= 2;
-                        new_array = (HistogramPair*)BrotliAllocate(ref m, _new_size * sizeof(HistogramPair));
-                        if (pairs_capacity != 0)
-
-                            memcpy(new_array, pairs, pairs_capacity * sizeof(HistogramPair));
-
-                        BrotliFree(ref m, pairs);
-                        pairs = new_array;
-                        pairs_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramPair), (void**)&pairs, &pairs_capacity, max_num_pairs + 1);
 
                     /* Collapse similar histograms. */
                     num_clusters = BrotliHistogramCombine(out_, cluster_size,

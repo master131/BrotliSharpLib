@@ -753,17 +753,7 @@ namespace BrotliSharpLib {
                 size_t num_found_matches;
                 size_t cur_match_end;
                 /* Ensure that we have enough free slots. */
-                if (matches_size < cur_match_pos + MAX_NUM_MATCHES_H10) {
-                    size_t new_size = matches_size == 0 ? cur_match_pos + MAX_NUM_MATCHES_H10 : matches_size;
-                    BackwardMatch* new_array;
-                    while (new_size < cur_match_pos + MAX_NUM_MATCHES_H10) new_size *= 2;
-                    new_array = (BackwardMatch*) BrotliAllocate(ref m, new_size * sizeof(BackwardMatch));
-                    if (matches_size != 0)
-                        memcpy(new_array, matches, matches_size * sizeof(BackwardMatch));
-                    BrotliFree(ref m, matches);
-                    matches = new_array;
-                    matches_size = new_size;
-                }
+                BrotliEnsureCapacity(ref m, sizeof(BackwardMatch), (void**) &matches, &matches_size, cur_match_pos + MAX_NUM_MATCHES_H10);
                 num_found_matches = HashToBinaryTreeH10.FindAllMatches(hasher, ringbuffer,
                     ringbuffer_mask, pos, max_length, max_distance, params_,
                     &matches[cur_match_pos]);

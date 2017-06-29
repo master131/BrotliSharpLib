@@ -261,36 +261,9 @@ namespace BrotliSharpLib {
                     num_new_clusters = ClusterLiteral.BrotliHistogramCombine(
                         histograms, sizes, symbols, new_clusters, pairs, num_to_combine,
                         num_to_combine, HISTOGRAMS_PER_BATCH, max_num_pairs);
-                    if (all_histograms_capacity < (all_histograms_size + num_new_clusters)) {
-                        size_t _new_size = (all_histograms_capacity == 0)
-                            ? (all_histograms_size + num_new_clusters)
-                            : all_histograms_capacity;
-                        HistogramLiteral* new_array;
-                        while (_new_size < (all_histograms_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (HistogramLiteral*) BrotliAllocate(ref m, _new_size * sizeof(HistogramLiteral));
-                        if (all_histograms_capacity != 0)
 
-                            memcpy(new_array, all_histograms, all_histograms_capacity * sizeof(HistogramLiteral));
-
-                        BrotliFree(ref m, all_histograms);
-                        all_histograms = new_array;
-                        all_histograms_capacity = _new_size;
-                    }
-                    if (cluster_size_capacity < (cluster_size_size + num_new_clusters)) {
-                        size_t _new_size = (cluster_size_capacity == 0)
-                            ? (cluster_size_size + num_new_clusters)
-                            : cluster_size_capacity;
-                        uint* new_array;
-                        while (_new_size < (cluster_size_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (uint*) BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (cluster_size_capacity != 0)
-
-                            memcpy(new_array, cluster_size, cluster_size_capacity * sizeof(uint));
-
-                        BrotliFree(ref m, cluster_size);
-                        cluster_size = new_array;
-                        cluster_size_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramLiteral), (void**)&all_histograms, &all_histograms_capacity, all_histograms_size + num_new_clusters);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&cluster_size, &cluster_size_capacity, cluster_size_size + num_new_clusters);
 
                     for (j = 0; j < num_new_clusters; ++j) {
                         all_histograms[all_histograms_size++] = histograms[new_clusters[j]];
@@ -357,32 +330,9 @@ namespace BrotliSharpLib {
                 }
                 BrotliFree(ref m, clusters);
                 BrotliFree(ref m, all_histograms);
-                if (split->types_alloc_size < (num_blocks)) {
-                    size_t _new_size = (split->types_alloc_size == 0) ? (num_blocks) : split->types_alloc_size;
-                    byte* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (byte*) BrotliAllocate(ref m, _new_size * sizeof(byte));
-                    if (split->types_alloc_size != 0)
 
-                        memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-
-                    BrotliFree(ref m, split->types);
-                    split->types = new_array;
-                    split->types_alloc_size = _new_size;
-                }
-                if (split->lengths_alloc_size < (num_blocks)) {
-                    size_t _new_size = (split->lengths_alloc_size == 0) ? (num_blocks) : split->lengths_alloc_size;
-                    uint* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (uint*) BrotliAllocate(ref m, _new_size * sizeof(uint));
-                    if (split->lengths_alloc_size != 0)
-
-                        memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-
-                    BrotliFree(ref m, split->lengths);
-                    split->lengths = new_array;
-                    split->lengths_alloc_size = _new_size;
-                }
+                BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, num_blocks);
+                BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, num_blocks);
 
                 {
                     uint cur_length = 0;
@@ -427,32 +377,8 @@ namespace BrotliSharpLib {
                     return;
                 }
                 else if (length < kMinLengthForBlockSplitting) {
-                    if (split->types_alloc_size < (split->num_blocks + 1)) {
-                        size_t _new_size = (split->types_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->types_alloc_size;
-                        byte* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (byte*) BrotliAllocate(ref m, _new_size * sizeof(byte));
-                        if (split->types_alloc_size != 0)
-                            memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-                        BrotliFree(ref m, split->types);
-                        split->types = new_array;
-                        split->types_alloc_size = _new_size;
-                    }
-                    if (split->lengths_alloc_size < (split->num_blocks + 1)) {
-                        size_t _new_size = (split->lengths_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->lengths_alloc_size;
-                        uint* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (uint*) BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (split->lengths_alloc_size != 0)
-                            memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-                        BrotliFree(ref m, split->lengths);
-                        split->lengths = new_array;
-                        split->lengths_alloc_size = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, split->num_blocks + 1);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, split->num_blocks + 1);
 
                     split->num_types = 1;
                     split->types[split->num_blocks] = 0;
@@ -786,38 +712,9 @@ namespace BrotliSharpLib {
                     num_new_clusters = ClusterCommand.BrotliHistogramCombine(
                         histograms, sizes, symbols, new_clusters, pairs, num_to_combine,
                         num_to_combine, HISTOGRAMS_PER_BATCH, max_num_pairs);
-                    if (all_histograms_capacity < (all_histograms_size + num_new_clusters))
-                    {
-                        size_t _new_size = (all_histograms_capacity == 0)
-                            ? (all_histograms_size + num_new_clusters)
-                            : all_histograms_capacity;
-                        HistogramCommand* new_array;
-                        while (_new_size < (all_histograms_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (HistogramCommand*)BrotliAllocate(ref m, _new_size * sizeof(HistogramCommand));
-                        if (all_histograms_capacity != 0)
 
-                            memcpy(new_array, all_histograms, all_histograms_capacity * sizeof(HistogramCommand));
-
-                        BrotliFree(ref m, all_histograms);
-                        all_histograms = new_array;
-                        all_histograms_capacity = _new_size;
-                    }
-                    if (cluster_size_capacity < (cluster_size_size + num_new_clusters))
-                    {
-                        size_t _new_size = (cluster_size_capacity == 0)
-                            ? (cluster_size_size + num_new_clusters)
-                            : cluster_size_capacity;
-                        uint* new_array;
-                        while (_new_size < (cluster_size_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (cluster_size_capacity != 0)
-
-                            memcpy(new_array, cluster_size, cluster_size_capacity * sizeof(uint));
-
-                        BrotliFree(ref m, cluster_size);
-                        cluster_size = new_array;
-                        cluster_size_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramCommand), (void**)&all_histograms, &all_histograms_capacity, all_histograms_size + num_new_clusters);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&cluster_size, &cluster_size_capacity, cluster_size_size + num_new_clusters);
 
                     for (j = 0; j < num_new_clusters; ++j)
                     {
@@ -893,34 +790,9 @@ namespace BrotliSharpLib {
                 }
                 BrotliFree(ref m, clusters);
                 BrotliFree(ref m, all_histograms);
-                if (split->types_alloc_size < (num_blocks))
-                {
-                    size_t _new_size = (split->types_alloc_size == 0) ? (num_blocks) : split->types_alloc_size;
-                    byte* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (byte*)BrotliAllocate(ref m, _new_size * sizeof(byte));
-                    if (split->types_alloc_size != 0)
 
-                        memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-
-                    BrotliFree(ref m, split->types);
-                    split->types = new_array;
-                    split->types_alloc_size = _new_size;
-                }
-                if (split->lengths_alloc_size < (num_blocks))
-                {
-                    size_t _new_size = (split->lengths_alloc_size == 0) ? (num_blocks) : split->lengths_alloc_size;
-                    uint* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                    if (split->lengths_alloc_size != 0)
-
-                        memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-
-                    BrotliFree(ref m, split->lengths);
-                    split->lengths = new_array;
-                    split->lengths_alloc_size = _new_size;
-                }
+                BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, num_blocks);
+                BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, num_blocks);
 
                 {
                     uint cur_length = 0;
@@ -971,34 +843,9 @@ namespace BrotliSharpLib {
                 }
                 else if (length < kMinLengthForBlockSplitting)
                 {
-                    if (split->types_alloc_size < (split->num_blocks + 1))
-                    {
-                        size_t _new_size = (split->types_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->types_alloc_size;
-                        byte* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (byte*)BrotliAllocate(ref m, _new_size * sizeof(byte));
-                        if (split->types_alloc_size != 0)
-                            memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-                        BrotliFree(ref m, split->types);
-                        split->types = new_array;
-                        split->types_alloc_size = _new_size;
-                    }
-                    if (split->lengths_alloc_size < (split->num_blocks + 1))
-                    {
-                        size_t _new_size = (split->lengths_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->lengths_alloc_size;
-                        uint* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (split->lengths_alloc_size != 0)
-                            memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-                        BrotliFree(ref m, split->lengths);
-                        split->lengths = new_array;
-                        split->lengths_alloc_size = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, split->num_blocks + 1);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, split->num_blocks + 1);
+
 
                     split->num_types = 1;
                     split->types[split->num_blocks] = 0;
@@ -1333,38 +1180,9 @@ namespace BrotliSharpLib {
                     num_new_clusters = ClusterDistance.BrotliHistogramCombine(
                         histograms, sizes, symbols, new_clusters, pairs, num_to_combine,
                         num_to_combine, HISTOGRAMS_PER_BATCH, max_num_pairs);
-                    if (all_histograms_capacity < (all_histograms_size + num_new_clusters))
-                    {
-                        size_t _new_size = (all_histograms_capacity == 0)
-                            ? (all_histograms_size + num_new_clusters)
-                            : all_histograms_capacity;
-                        HistogramDistance* new_array;
-                        while (_new_size < (all_histograms_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (HistogramDistance*)BrotliAllocate(ref m, _new_size * sizeof(HistogramDistance));
-                        if (all_histograms_capacity != 0)
 
-                            memcpy(new_array, all_histograms, all_histograms_capacity * sizeof(HistogramDistance));
-
-                        BrotliFree(ref m, all_histograms);
-                        all_histograms = new_array;
-                        all_histograms_capacity = _new_size;
-                    }
-                    if (cluster_size_capacity < (cluster_size_size + num_new_clusters))
-                    {
-                        size_t _new_size = (cluster_size_capacity == 0)
-                            ? (cluster_size_size + num_new_clusters)
-                            : cluster_size_capacity;
-                        uint* new_array;
-                        while (_new_size < (cluster_size_size + num_new_clusters)) _new_size *= 2;
-                        new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (cluster_size_capacity != 0)
-
-                            memcpy(new_array, cluster_size, cluster_size_capacity * sizeof(uint));
-
-                        BrotliFree(ref m, cluster_size);
-                        cluster_size = new_array;
-                        cluster_size_capacity = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(HistogramDistance), (void**)&all_histograms, &all_histograms_capacity, all_histograms_size + num_new_clusters);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&cluster_size, &cluster_size_capacity, cluster_size_size + num_new_clusters);
 
                     for (j = 0; j < num_new_clusters; ++j)
                     {
@@ -1440,34 +1258,9 @@ namespace BrotliSharpLib {
                 }
                 BrotliFree(ref m, clusters);
                 BrotliFree(ref m, all_histograms);
-                if (split->types_alloc_size < (num_blocks))
-                {
-                    size_t _new_size = (split->types_alloc_size == 0) ? (num_blocks) : split->types_alloc_size;
-                    byte* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (byte*)BrotliAllocate(ref m, _new_size * sizeof(byte));
-                    if (split->types_alloc_size != 0)
 
-                        memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-
-                    BrotliFree(ref m, split->types);
-                    split->types = new_array;
-                    split->types_alloc_size = _new_size;
-                }
-                if (split->lengths_alloc_size < (num_blocks))
-                {
-                    size_t _new_size = (split->lengths_alloc_size == 0) ? (num_blocks) : split->lengths_alloc_size;
-                    uint* new_array;
-                    while (_new_size < (num_blocks)) _new_size *= 2;
-                    new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                    if (split->lengths_alloc_size != 0)
-
-                        memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-
-                    BrotliFree(ref m, split->lengths);
-                    split->lengths = new_array;
-                    split->lengths_alloc_size = _new_size;
-                }
+                BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, num_blocks);
+                BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, num_blocks);
 
                 {
                     uint cur_length = 0;
@@ -1518,34 +1311,8 @@ namespace BrotliSharpLib {
                 }
                 else if (length < kMinLengthForBlockSplitting)
                 {
-                    if (split->types_alloc_size < (split->num_blocks + 1))
-                    {
-                        size_t _new_size = (split->types_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->types_alloc_size;
-                        byte* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (byte*)BrotliAllocate(ref m, _new_size * sizeof(byte));
-                        if (split->types_alloc_size != 0)
-                            memcpy(new_array, split->types, split->types_alloc_size * sizeof(byte));
-                        BrotliFree(ref m, split->types);
-                        split->types = new_array;
-                        split->types_alloc_size = _new_size;
-                    }
-                    if (split->lengths_alloc_size < (split->num_blocks + 1))
-                    {
-                        size_t _new_size = (split->lengths_alloc_size == 0)
-                            ? (split->num_blocks + 1)
-                            : split->lengths_alloc_size;
-                        uint* new_array;
-                        while (_new_size < (split->num_blocks + 1)) _new_size *= 2;
-                        new_array = (uint*)BrotliAllocate(ref m, _new_size * sizeof(uint));
-                        if (split->lengths_alloc_size != 0)
-                            memcpy(new_array, split->lengths, split->lengths_alloc_size * sizeof(uint));
-                        BrotliFree(ref m, split->lengths);
-                        split->lengths = new_array;
-                        split->lengths_alloc_size = _new_size;
-                    }
+                    BrotliEnsureCapacity(ref m, sizeof(byte), (void**)&split->types, &split->types_alloc_size, split->num_blocks + 1);
+                    BrotliEnsureCapacity(ref m, sizeof(uint), (void**)&split->lengths, &split->lengths_alloc_size, split->num_blocks + 1);
 
                     split->num_types = 1;
                     split->types[split->num_blocks] = 0;
