@@ -194,56 +194,58 @@ namespace BrotliSharpLib {
                 size_t short_match_max_backward =
                     params_->quality != HQ_ZOPFLIFICATION_QUALITY ? 16 : 64;
                 size_t stop = cur_ix - short_match_max_backward;
-                uint* dict_matches = stackalloc uint[BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN + 1];
-                size_t i;
-                if (cur_ix < short_match_max_backward) {
-                    stop = 0;
-                }
-                for (i = cur_ix - 1; i > stop && best_len <= 2; --i) {
-                    size_t prev_ix = i;
-                    size_t backward = cur_ix - prev_ix;
-                    if ((backward > max_backward)) {
-                        break;
+                uint[] dict_matches_arr = new uint[BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN + 1];
+                fixed (uint* dict_matches = dict_matches_arr) {
+                    size_t i;
+                    if (cur_ix < short_match_max_backward) {
+                        stop = 0;
                     }
-                    prev_ix &= ring_buffer_mask;
-                    if (data[cur_ix_masked] != data[prev_ix] ||
-                        data[cur_ix_masked + 1] != data[prev_ix + 1]) {
-                        continue;
-                    }
-                    {
-                        size_t len =
-                            FindMatchLengthWithLimit(&data[prev_ix], &data[cur_ix_masked],
-                                max_length);
-                        if (len > best_len) {
-                            best_len = len;
-                            InitBackwardMatch(matches++, backward, len);
+                    for (i = cur_ix - 1; i > stop && best_len <= 2; --i) {
+                        size_t prev_ix = i;
+                        size_t backward = cur_ix - prev_ix;
+                        if ((backward > max_backward)) {
+                            break;
                         }
-                    }
-                }
-                if (best_len < max_length) {
-                    matches = StoreAndFindMatches(Self(handle), data, cur_ix,
-                        ring_buffer_mask, max_length, max_backward, &best_len, matches);
-                }
-                for (i = 0; i <= BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN; ++i) {
-                    dict_matches[i] = kInvalidMatch;
-                }
-                {
-                    size_t minlen = Math.Max(4, best_len + 1);
-                    if (BrotliFindAllStaticDictionaryMatches(
-                        &data[cur_ix_masked], minlen, max_length, &dict_matches[0])) {
-                        size_t maxlen = Math.Min(
-                            BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN, max_length);
-                        size_t l;
-                        for (l = minlen; l <= maxlen; ++l) {
-                            uint dict_id = dict_matches[l];
-                            if (dict_id < kInvalidMatch) {
-                                InitDictionaryBackwardMatch(matches++,
-                                    max_backward + (dict_id >> 5) + 1, l, dict_id & 31);
+                        prev_ix &= ring_buffer_mask;
+                        if (data[cur_ix_masked] != data[prev_ix] ||
+                            data[cur_ix_masked + 1] != data[prev_ix + 1]) {
+                            continue;
+                        }
+                        {
+                            size_t len =
+                                FindMatchLengthWithLimit(&data[prev_ix], &data[cur_ix_masked],
+                                    max_length);
+                            if (len > best_len) {
+                                best_len = len;
+                                InitBackwardMatch(matches++, backward, len);
                             }
                         }
                     }
+                    if (best_len < max_length) {
+                        matches = StoreAndFindMatches(Self(handle), data, cur_ix,
+                            ring_buffer_mask, max_length, max_backward, &best_len, matches);
+                    }
+                    for (i = 0; i <= BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN; ++i) {
+                        dict_matches[i] = kInvalidMatch;
+                    }
+                    {
+                        size_t minlen = Math.Max(4, best_len + 1);
+                        if (BrotliFindAllStaticDictionaryMatches(
+                            &data[cur_ix_masked], minlen, max_length, &dict_matches[0])) {
+                            size_t maxlen = Math.Min(
+                                BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN, max_length);
+                            size_t l;
+                            for (l = minlen; l <= maxlen; ++l) {
+                                uint dict_id = dict_matches[l];
+                                if (dict_id < kInvalidMatch) {
+                                    InitDictionaryBackwardMatch(matches++,
+                                        max_backward + (dict_id >> 5) + 1, l, dict_id & 31);
+                                }
+                            }
+                        }
+                    }
+                    return (size_t)(matches - orig_matches);
                 }
-                return (size_t) (matches - orig_matches);
             }
 
             /* Stores the hash of the next 4 bytes and re-roots the binary tree at the
