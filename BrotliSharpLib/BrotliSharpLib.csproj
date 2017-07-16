@@ -6,7 +6,7 @@
 		<NoWarn>1570;1701</NoWarn>
 	</PropertyGroup>
 	<PropertyGroup>
-		<Version>0.2</Version>
+		<Version>0.2.1</Version>
 		<FileVersion>0.2.1</FileVersion>
 		<Authors>master131</Authors>
 		<Description>Full C# port of Brotli compression library.</Description>
