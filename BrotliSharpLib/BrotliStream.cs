@@ -52,6 +52,7 @@ namespace BrotliSharpLib
                         throw new ArgumentException("Stream does not support write", nameof(stream));
 
                     _encoderState = Brotli.BrotliEncoderCreateInstance(null, null, null);
+                    SetQuality(1);
                     break;
             }
         }
@@ -279,23 +280,19 @@ namespace BrotliSharpLib
             byte[] out_buf = new byte[0x1FFFE];
             size_t available_in = count, available_out = out_buf.Length;
             fixed (byte* out_buf_ptr = out_buf)
-            fixed (byte* buf_ptr = buffer)
-            {
+            fixed (byte* buf_ptr = buffer) {
                 byte* next_in = buf_ptr + offset;
                 byte* next_out = out_buf_ptr;
 
-                while ((!flush && available_in > 0) || flush)
-                {
+                while ((!flush && available_in > 0) || flush) {
                     if (!Brotli.BrotliEncoderCompressStream(ref _encoderState,
                         operation, &available_in, &next_in,
-                        &available_out, &next_out, null))
-                    {
+                        &available_out, &next_out, null)) {
                         throw new InvalidDataException("Compression failed");
                     }
 
                     bool hasData = available_out != out_buf.Length;
-                    if (hasData)
-                    {
+                    if (hasData) {
                         int out_size = (int)(out_buf.Length - available_out);
                         _stream.Write(out_buf, 0, out_size);
                         available_out = out_buf.Length;
