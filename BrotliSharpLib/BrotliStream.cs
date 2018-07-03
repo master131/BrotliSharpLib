@@ -14,6 +14,8 @@ namespace BrotliSharpLib
         private CompressionMode _mode;
         private bool _leaveOpen, _disposed;
         private IntPtr _customDictionary = IntPtr.Zero;
+        private byte[] _buffer;
+        private int _bufferCount, _bufferOffset;
 
         private Brotli.BrotliEncoderStateStruct _encoderState;
         private Brotli.BrotliDecoderStateStruct _decoderState;
@@ -46,6 +48,7 @@ namespace BrotliSharpLib
 
                     _decoderState = Brotli.BrotliCreateDecoderState();
                     Brotli.BrotliDecoderStateInit(ref _decoderState);
+                    _buffer = new byte[0xfff0];
                     break;
                 case CompressionMode.Compress:
                     if (!_stream.CanWrite)
@@ -231,46 +234,56 @@ namespace BrotliSharpLib
             EnsureNotDisposed();
             ValidateParameters(buffer, offset, count);
 
-            bool endOfStream = false;
-            byte[] in_buf = new byte[0xffff];
-            size_t available_in = 0, available_out = count;
-            fixed (byte* in_buf_ptr = in_buf)
-            fixed (byte* buf_ptr = buffer) {
-                byte* next_in = in_buf_ptr;
-                byte* next_out = buf_ptr + offset;
-                int total = 0;
+            int totalWritten = 0;
+            while (offset < buffer.Length && _lastDecoderState != Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_SUCCESS) {
+                if (_lastDecoderState == Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
+                    if (_bufferCount > 0 && _bufferOffset != 0) {
+                        Array.Copy(_buffer, _bufferOffset, _buffer, 0, _bufferCount);
+                    }
+                    _bufferOffset = 0;
 
-                while (true) {
-                    if (_lastDecoderState == Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
-                        int len = _stream.Read(in_buf, 0, in_buf.Length);
-                        if (len <= 0) {
-                            endOfStream = true;
-                            break;
-                        }
-                        available_in = len;
-                        next_in = in_buf_ptr;
+                    int numRead = 0;
+                    while (_bufferCount < _buffer.Length && ((numRead = _stream.Read(_buffer, _bufferCount, _buffer.Length - _bufferCount)) > 0)) {
+                        _bufferCount += numRead;
+                        if (_bufferCount > _buffer.Length)
+                            throw new InvalidDataException("Invalid input stream detected, more bytes supplied than expected.");
                     }
-                    else if (_lastDecoderState == Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-                        /* Ignore */
-                    }
-                    else {
-                        endOfStream = true;
+
+                    if (_bufferCount <= 0)
                         break;
-                    }
-
-                    size_t available_out_old = available_out;
-                    _lastDecoderState = Brotli.BrotliDecoderDecompressStream(ref _decoderState, &available_in,
-                        &next_in, &available_out, &next_out, null);
-
-                    total += (int) (available_out_old - available_out);
-                    if (total >= count) break;
                 }
 
-                if (endOfStream && _lastDecoderState != Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_SUCCESS)
+                size_t available_in = _bufferCount;
+                size_t available_in_old = available_in;
+                size_t available_out = count;
+                size_t available_out_old = available_out;
+
+                fixed (byte* out_buf_ptr = buffer)
+                fixed (byte* in_buf_ptr = _buffer) {
+                    byte* in_buf = in_buf_ptr + _bufferOffset;
+                    byte* out_buf = out_buf_ptr + offset;
+                    _lastDecoderState = Brotli.BrotliDecoderDecompressStream(ref _decoderState, &available_in, &in_buf,
+                        &available_out, &out_buf, null);
+                }
+
+                if (_lastDecoderState == Brotli.BrotliDecoderResult.BROTLI_DECODER_RESULT_ERROR)
                     throw new InvalidDataException("Decompression failed with error code: " + _decoderState.error_code);
 
-                return total;
+                size_t bytesConsumed = available_in_old - available_in;
+                size_t bytesWritten = available_out_old - available_out;
+
+                if (bytesConsumed > 0) {
+                    _bufferOffset += (int) bytesConsumed;
+                    _bufferCount -= (int) bytesConsumed;
+                }
+
+                if (bytesWritten > 0) {
+                    totalWritten += (int)bytesWritten;
+                    offset += (int)bytesWritten;
+                }
             }
+
+            return totalWritten;
         }
 
         private void WriteCore(byte[] buffer, int offset, int count, Brotli.BrotliEncoderOperation operation) {

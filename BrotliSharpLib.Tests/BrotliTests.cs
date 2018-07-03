@@ -9,7 +9,7 @@ namespace BrotliSharpLib.Tests
     [TestFixture]
     public class BrotliTests
     {
-        private const string TestdataDir = "testdata";
+        private static string TestdataDir = "testdata";
 
         private static readonly Dictionary<string, string> DecompressTestFiles = new Dictionary<string, string>()
         {
@@ -55,6 +55,8 @@ namespace BrotliSharpLib.Tests
             { "x.compressed.03", "x" },
             { "xyzzy.compressed", "xyzzy" },
             { "zeros.compressed", "zeros" },
+            { "pokemon_lvl_3.proto.br", "pokemon_lvl_3.proto" },
+            { "pokemon_lvl_11.proto.br", "pokemon_lvl_11.proto" },
         };
 
         private static readonly List<string> CompressTestFiles = new List<string>
@@ -74,7 +76,7 @@ namespace BrotliSharpLib.Tests
                 directory = Path.GetDirectoryName(directory);
 
             Assert.NotNull(directory, "testdata directory does not exist");
-            Environment.CurrentDirectory = directory;
+            TestdataDir = Path.Combine(directory, TestdataDir);
         }
 
         private void CompareBuffers(byte[] original, byte[] decompressed, string fileName)
@@ -125,7 +127,14 @@ namespace BrotliSharpLib.Tests
                 using (var ms = new MemoryStream())
                 using (var bs = new BrotliStream(fs, CompressionMode.Decompress))
                 {
-                    bs.CopyTo(ms);
+                    try
+                    {
+                        bs.CopyTo(ms);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new Exception("Decompress failed with for " + kvp.Key, e);
+                    }
 
                     // Compare the decompressed version with the original
                     var original = File.ReadAllBytes(originalFilePath);
