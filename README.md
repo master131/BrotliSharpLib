@@ -41,7 +41,7 @@ using (var ms = new MemoryStream())
 {
     using (var bs = new BrotliStream(ms, CompressionMode.Compress))
     {
-        // By default, brotli uses a quality value of 11 and window size of 22 if the methods are not called.
+        // By default, BrotliSharpLib uses a quality value of 1 and window size of 22 if the methods are not called.
         /** bs.SetQuality(quality); **/
         /** bs.SetWindow(windowSize); **/
         /** bs.SetCustomDictionary(customDict); **/
