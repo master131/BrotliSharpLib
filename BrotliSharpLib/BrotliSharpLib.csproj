@@ -6,16 +6,16 @@
 		<NoWarn>1570;1701</NoWarn>
 	</PropertyGroup>
 	<PropertyGroup>
-		<Version>0.2.1</Version>
-		<FileVersion>0.2.1</FileVersion>
+		<Version>0.3</Version>
+		<FileVersion>0.3</FileVersion>
 		<Authors>master131</Authors>
 		<Description>Full C# port of Brotli compression library.</Description>
-		<Copyright>Copyright (c) 2017 master131</Copyright>
+		<Copyright>Copyright (c) 2017-2018 master131</Copyright>
 		<RepositoryUrl>https://github.com/master131/BrotliSharpLib</RepositoryUrl>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>brotli;csharp;net</PackageTags>
-		<AssemblyVersion>0.2.1.0</AssemblyVersion>
+		<AssemblyVersion>0.3</AssemblyVersion>
 		<PackageLicenseUrl>https://github.com/master131/BrotliSharpLib/blob/master/LICENSE</PackageLicenseUrl>
 		<PackageProjectUrl>https://github.com/master131/BrotliSharpLib</PackageProjectUrl>
 	</PropertyGroup>
