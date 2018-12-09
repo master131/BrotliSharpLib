@@ -444,9 +444,10 @@ namespace BrotliSharpLib {
                    without context and 13 additional histograms for each context value. */
                 uint* combined_histo = stackalloc uint[32];
                 memset(combined_histo, 0, 32 * sizeof(uint));
-                uint* context_histo_tmp = stackalloc uint[13 * 32];
-                memset(context_histo_tmp, 0, 13 * 32 * sizeof(uint));
-                uint** context_histo = (uint**) context_histo_tmp;
+
+                uint* context_histo = stackalloc uint[13 * 32];
+                memset(context_histo, 0, 13 * 32 * sizeof(uint));
+
                 uint total = 0;
                 double* entropy = stackalloc double[3];
                 size_t dummy;
@@ -464,7 +465,7 @@ namespace BrotliSharpLib {
                             Context(prev1, prev2, ContextType.CONTEXT_UTF8)];
                         ++total;
                         ++combined_histo[literal >> 3];
-                        ++context_histo[context][literal >> 3];
+                        ++context_histo[(context * 32) + (literal >> 3)];
                         prev2 = prev1;
                         prev1 = literal;
                     }
@@ -472,7 +473,7 @@ namespace BrotliSharpLib {
                 entropy[1] = ShannonEntropy(combined_histo, 32, &dummy);
                 entropy[2] = 0;
                 for (i = 0; i < 13; ++i) {
-                    entropy[2] += ShannonEntropy(&context_histo[i][0], 32, &dummy);
+                    entropy[2] += ShannonEntropy(&context_histo[i * 32], 32, &dummy);
                 }
                 entropy[0] = 1.0 / (double) total;
                 entropy[1] *= entropy[0];
