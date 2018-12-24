@@ -115,6 +115,9 @@ namespace BrotliSharpLib {
             if (System.Runtime.Intrinsics.X86.Lzcnt.IsSupported) {
                 return 31u ^ (uint)System.Runtime.Intrinsics.X86.Lzcnt.LeadingZeroCount((uint)n | 1);
             }
+            else if (System.Runtime.Intrinsics.Arm.Arm64.Base.IsSupported) {
+                return 31u ^ (uint)System.Runtime.Intrinsics.Arm.Arm64.Base.LeadingZeroCount((uint)n | 1);
+            }
 #endif
             size_t m = n;
             uint result = 0;
