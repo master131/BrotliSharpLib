@@ -112,8 +112,7 @@ namespace BrotliSharpLib {
 #endif
         private static uint Log2FloorNonZero(size_t n) {
 #if NETCOREAPP3_0
-            if (System.Runtime.Intrinsics.X86.Lzcnt.IsSupported)
-            {
+            if (System.Runtime.Intrinsics.X86.Lzcnt.IsSupported) {
                 return 31u ^ (uint)System.Runtime.Intrinsics.X86.Lzcnt.LeadingZeroCount((uint)n | 1);
             }
 #endif
