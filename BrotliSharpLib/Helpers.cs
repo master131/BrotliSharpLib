@@ -123,6 +123,9 @@ namespace BrotliSharpLib {
 
         // https://github.com/dotnet/coreclr/blob/master/src/mscorlib/src/System/Buffer.cs
         private static unsafe void memcpy(void* destination, void* source, size_t length) {
+#if !(NET20 || NET35 || NET40)
+            System.Runtime.CompilerServices.Unsafe.CopyBlockUnaligned(destination, source, length);
+#else
             // This is portable version of memcpy. It mirrors what the hand optimized assembly versions of memcpy typically do.
             //
             // Ideally, we would just use the cpblk IL instruction here. Unfortunately, cpblk IL instruction is not as efficient as
@@ -423,6 +426,7 @@ namespace BrotliSharpLib {
                 // We're not using i after this, so not needed
                 // i += 1;
             }
+#endif
         }
 
 #if AGGRESSIVE_INLINING
@@ -443,6 +447,10 @@ namespace BrotliSharpLib {
 
         // https://github.com/Smattr/memset
         private static unsafe void* memset(void* ptr, int value, size_t num) {
+#if !(NET20 || NET35 || NET40)
+            System.Runtime.CompilerServices.Unsafe.InitBlockUnaligned(ptr, (byte)value, num);
+            return ptr;
+#else
             size_t x = value & 0xff;
             var pp = (byte*) ptr;
             var xx = (byte) (value & 0xff);
@@ -468,6 +476,7 @@ namespace BrotliSharpLib {
                 *pp++ = xx;
 
             return ptr;
+#endif
         }
 
         [DebuggerDisplay("{Value}")]
