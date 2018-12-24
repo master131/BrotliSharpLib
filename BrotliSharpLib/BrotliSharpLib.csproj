@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net20;net35;net40;net45;net451;net452;net462;netstandard1.3;netstandard1.6;netstandard2.0;netcoreapp1.0;netcoreapp1.1;netcoreapp3.0</TargetFrameworks>
+		<TargetFrameworks>net20;net35;net40;net45;net451;netstandard1.1;netstandard1.3;netstandard2.0;netcoreapp3.0</TargetFrameworks>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>1570;1701</NoWarn>
@@ -26,7 +26,7 @@
 	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40'">
 		<DefineConstants>$(DefineConstants);AGGRESSIVE_INLINING</DefineConstants>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40' AND '$(TargetFramework)'!='net45'">
+	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40' AND '$(TargetFramework)'!='net45' AND '$(TargetFramework)'!='netstandard1.1'">
 		<DefineConstants>$(DefineConstants);SIZE_OF_T</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net45'">
@@ -39,37 +39,20 @@
 	    <Version>4.5.2</Version>
 	  </PackageReference>
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
-	    <Version>4.5.2</Version>
-	  </PackageReference>
-	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.1'">
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+      <Version>4.5.2</Version>
+    </PackageReference>
+    <PackageReference Include="System.IO.Compression">
+      <Version>4.3.0</Version>
+    </PackageReference>
+  </ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
 	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
 	    <Version>4.5.2</Version>
 	  </PackageReference>
 	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net452'">
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
-	    <Version>4.5.2</Version>
-	  </PackageReference>
-	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net451'">
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
-	    <Version>4.5.2</Version>
-	  </PackageReference>
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
-	    <Version>4.5.2</Version>
-	  </PackageReference>
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
-	    <Version>4.5.2</Version>
-	  </PackageReference>
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
 	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
 	    <Version>4.5.2</Version>
 	  </PackageReference>
