@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using size_t = BrotliSharpLib.Brotli.SizeT;
 
 namespace BrotliSharpLib {
@@ -106,7 +107,16 @@ namespace BrotliSharpLib {
             return Math.Log(v) * LOG_2_INV;
         }
 
+#if AGGRESSIVE_INLINING
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static uint Log2FloorNonZero(size_t n) {
+#if NETCOREAPP3_0
+            if (System.Runtime.Intrinsics.X86.Lzcnt.IsSupported)
+            {
+                return 31u ^ (uint)System.Runtime.Intrinsics.X86.Lzcnt.LeadingZeroCount((uint)n | 1);
+            }
+#endif
             size_t m = n;
             uint result = 0;
             while ((m >>= 1) != 0) result++;
