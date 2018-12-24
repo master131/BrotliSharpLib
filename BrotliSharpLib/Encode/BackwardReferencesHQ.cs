@@ -78,13 +78,13 @@ namespace BrotliSharpLib {
         /* Maintains the smallest 8 cost difference together with their positions */
         [StructLayout(LayoutKind.Sequential)]
         private unsafe struct StartPosQueue {
-            private fixed long q_internal[8 * 4];
+            private PosData q0, q1, q2, q3, q4, q5, q6, q7;
             public size_t idx_;
 
             public PosData* q_ {
                 get {
-                    fixed (long* q = q_internal)
-                        return (PosData*) q;
+                    fixed (PosData* q = &q0)
+                        return q;
                 }
             }
         }
