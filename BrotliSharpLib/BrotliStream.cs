@@ -280,6 +280,7 @@ namespace BrotliSharpLib
                 if (bytesWritten > 0) {
                     totalWritten += (int)bytesWritten;
                     offset += (int)bytesWritten;
+                    count -= (int)bytesWritten;
                 }
             }
 
