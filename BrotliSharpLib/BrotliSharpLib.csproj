@@ -6,11 +6,11 @@
 		<NoWarn>1570;1701</NoWarn>
 	</PropertyGroup>
 	<PropertyGroup>
-		<Version>0.3.2</Version>
-		<FileVersion>0.3.2</FileVersion>
+		<Version>0.3.3</Version>
+		<FileVersion>0.3.3</FileVersion>
 		<Authors>master131</Authors>
 		<Description>Full C# port of Brotli compression library.</Description>
-		<Copyright>Copyright (c) 2017-2018 master131</Copyright>
+		<Copyright>Copyright (c) 2017-2019 master131</Copyright>
 		<RepositoryUrl>https://github.com/master131/BrotliSharpLib</RepositoryUrl>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
