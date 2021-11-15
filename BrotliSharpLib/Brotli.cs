@@ -87,6 +87,64 @@ namespace BrotliSharpLib {
             }
         }
 
+#if HAS_SPAN
+        /// <summary>
+        /// Attempts to decompress the compressed data in <paramref name="buffer"/> into <paramref name="outBufferData"/>.
+        /// </summary>
+        /// <param name="buffer">The buffer containing compressed data.</param>
+        /// <param name="outBufferData">The buffer to write the decompressed data to.</param>
+        /// <param name="writtenData">The number of bytes written to the output buffer.</param>
+        /// <param name="customDict">The custom dictionary that will be passed to the decoder.</param>
+        /// <returns><see langword="true"/> if the input buffer was successfully decompressed, <see langword="false"/> otherwise.</returns>
+        public static unsafe bool TryDecompressBuffer(ReadOnlySpan<byte> buffer, Span<byte> outBufferData, out int writtenData, ReadOnlySpan<byte> customDict = default)
+        {
+            // Create the decoder state and intialise it.
+            var s = BrotliCreateDecoderState();
+            BrotliDecoderStateInit(ref s);
+
+            writtenData = 0;
+
+            // Set the custom dictionary
+            fixed (byte* customDictPtr = customDict)
+            {
+                if (customDictPtr != null)
+                    BrotliDecoderSetCustomDictionary(ref s, customDict.Length, customDictPtr);
+
+                // Pin the output buffer and the input buffer.
+                fixed (byte* outBuffer = outBufferData)
+                {
+                    fixed (byte* inBuffer = buffer)
+                    {
+                        // Specify the length of the input buffer.
+                        size_t len = buffer.Length;
+
+                        // Local vars for input/output buffer.
+                        var bufPtr = inBuffer;
+                        var outPtr = outBuffer;
+
+                        // Specify the amount of bytes available in the output buffer.
+                        size_t availOut = outBufferData.Length;
+
+                        // Total number of bytes decoded.
+                        size_t total = 0;
+
+                        // Main decompression loop.
+                        var result = BrotliDecoderDecompressStream(ref s, &len, &bufPtr, &availOut, &outPtr, &total);
+
+                        // Cleanup and throw.
+                        BrotliDecoderStateCleanup(ref s);
+
+                        if (result != BrotliDecoderResult.BROTLI_DECODER_RESULT_SUCCESS)
+                            return false;
+
+                        writtenData = outBufferData.Length - (int)availOut;
+                        return true;
+                    }
+                }
+            }
+        }
+#endif
+
         /// <summary>
         /// Compresses a byte array into a new byte array using brotli.
         /// </summary>
@@ -167,5 +225,84 @@ namespace BrotliSharpLib {
                 return ms.ToArray();
             }
         }
+
+#if HAS_SPAN
+        /// <summary>
+        /// Tries to compress <paramref name="buffer"/> into <paramref name="outBuffer"/>.
+        /// </summary>
+        /// <param name="buffer">The buffer to read uncompressed data from.</param>
+        /// <param name="outBuffer">The buffer to write compressed data to.</param>
+        /// <param name="writtenData">The amount of data written to <paramref name="outBuffer"/>.</param>
+        /// <param name="customDict">The custom dictionary that will be passed to the encoder.</param>
+        /// <returns><see langword="true"/> if the input buffer was successfully compressed, <see langword="false"/> otherwise.</returns>
+        public static bool TryCompressBuffer(ReadOnlySpan<byte> buffer, Span<byte> outBuffer, out int writtenData, ReadOnlySpan<byte> customDict = default)
+            => TryCompressBuffer(buffer, outBuffer, out writtenData, customDict);
+        /// <summary>
+        /// Tries to compress <paramref name="buffer"/> into <paramref name="outBuffer"/>.
+        /// </summary>
+        /// <param name="buffer">The buffer to read uncompressed data from.</param>
+        /// <param name="outBuffer">The buffer to write compressed data to.</param>
+        /// <param name="writtenData">The amount of data written to <paramref name="outBuffer"/>.</param>
+        /// <param name="quality">The quality of the compression. This must be a value between 0 to 11 (inclusive).</param>
+        /// <param name="lgwin">The window size (in bits). This must be a value between 10 and 24 (inclusive).</param>
+        /// <param name="customDict">The custom dictionary that will be passed to the encoder.</param>
+        /// <returns><see langword="true"/> if the input buffer was successfully compressed, <see langword="false"/> otherwise.</returns>
+        public static unsafe bool TryCompressBuffer(ReadOnlySpan<byte> buffer, Span<byte> outBuffer, out int writtenData,
+            int quality, int lgwin, ReadOnlySpan<byte> customDict = default)
+        {
+            // Create the encoder state and intialise it.
+            var s = BrotliEncoderCreateInstance(null, null, null);
+
+            // Set the encoder parameters
+            if (quality != -1)
+                BrotliEncoderSetParameter(ref s, BrotliEncoderParameter.BROTLI_PARAM_QUALITY, (uint)quality);
+
+            if (lgwin != -1)
+                BrotliEncoderSetParameter(ref s, BrotliEncoderParameter.BROTLI_PARAM_LGWIN, (uint)lgwin);
+
+            // Set the custom dictionary
+            fixed (byte* cd = customDict)
+            {
+                if (cd != null)
+                    BrotliEncoderSetCustomDictionary(ref s, customDict.Length, cd);
+            }
+
+            writtenData = 0;
+
+            size_t available_in = buffer.Length;
+            size_t available_out = outBuffer.Length;
+            fixed (byte* o = outBuffer)
+            fixed (byte* b = buffer)
+            {
+                byte* next_in = b;
+                byte* next_out = o;
+
+                bool fail = false;
+
+                // Compress stream using inputted buffer
+                if (!BrotliEncoderCompressStream(ref s, BrotliEncoderOperation.BROTLI_OPERATION_FINISH,
+                    &available_in, &next_in, &available_out, &next_out, null))
+                {
+                    fail = true;
+                }
+                else
+                {
+                    // Check that the encoder is finished
+                    if (BrotliEncoderIsFinished(ref s))
+                    {
+                        fail = true;
+                    }
+                }
+
+                BrotliEncoderDestroyInstance(ref s);
+
+                if (fail)
+                    return false;
+            }
+
+            writtenData = outBuffer.Length - (int)available_out;
+            return true;
+        }
+#endif
     }
 }
